@@ -136,9 +136,15 @@ async function doSignup() {
   try {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) { showAuthError(error.message); return; }
-    showAuthSuccess('Account created! Check your email to confirm, then sign in.');
-    switchAuthTab('signin');
-    document.getElementById('auth-email').value = email;
+    if (data.session) {
+      currentUser = data.user;
+      onAuthSuccess();
+    } else {
+      switchAuthTab('signin');
+      document.getElementById('auth-email').value = email;
+      document.getElementById('auth-success').textContent = 'Account created! Check your email to confirm, then sign in.';
+      document.getElementById('auth-success').style.display = 'block';
+    }
   } catch(e) { showAuthError(e.message); }
 }
 
@@ -159,7 +165,14 @@ function onAuthSuccess() {
 }
 
 async function initAuth() {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  try {
+    if (!window.supabase) throw new Error('Supabase CDN not loaded');
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch(e) {
+    console.error('Auth init failed:', e);
+    document.getElementById('auth-overlay').innerHTML = '<div class="auth-box"><p style="color:#c62828;">Failed to initialize auth: ' + e.message + '</p></div>';
+    return;
+  }
   const { data: { session } } = await supabase.auth.getSession();
   if (session && session.user) {
     currentUser = session.user;
@@ -543,7 +556,7 @@ window.initApp = async function() {
   }
 };
 
-initAuth();
+initAuth().catch(e => console.error('initAuth unhandled:', e));
 
 </script>
 </body>
