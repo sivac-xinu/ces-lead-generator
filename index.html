@@ -11,14 +11,63 @@
   .btn-success:hover { background: #1b5e20; border-color: #1b5e20; }
   .tag-input { border: 1.5px solid #d0d8ee; border-radius: 6px; padding: 4px 8px; background: #fff; display: flex; flex-wrap: wrap; gap: 4px; cursor: text; min-height: 36px; align-items: center; }
   .tag-input-field { border: none; outline: none; font-size: 13px; flex: 1; min-width: 80px; background: transparent; }
+  /* Auth overlay */
+  #auth-overlay { position: fixed; inset: 0; background: #f0f4f8; z-index: 10000; display: flex; align-items: center; justify-content: center; }
+  #auth-overlay.hidden { display: none; }
+  .auth-box { background: #fff; border-radius: 14px; padding: 36px 40px 32px; width: 400px; max-width: 94vw; box-shadow: 0 24px 80px rgba(0,0,50,0.2); text-align: center; }
+  .auth-box .auth-logo { margin-bottom: 12px; }
+  .auth-box h1 { font-size: 22px; color: var(--ces-navy); margin-bottom: 4px; }
+  .auth-box .auth-sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+  .auth-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #e0e4f0; }
+  .auth-tab { flex: 1; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: none; color: #888; border-bottom: 3px solid transparent; margin-bottom: -2px; font-family: inherit; }
+  .auth-tab.active { color: var(--ces-navy); border-bottom-color: var(--accent); }
+  .auth-panel { display: none; }
+  .auth-panel.active { display: block; }
+  .auth-box .form-group { text-align: left; margin-bottom: 14px; }
+  .auth-box label { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 4px; }
+  .auth-box input { width: 100%; padding: 10px 12px; border: 1.5px solid #d0d8ee; border-radius: 8px; font-size: 14px; outline: none; font-family: inherit; box-sizing: border-box; }
+  .auth-box input:focus { border-color: var(--accent); }
+  .auth-box .btn { width: 100%; padding: 11px; font-size: 14px; }
+  .auth-box .auth-error { color: #c62828; font-size: 13px; margin-bottom: 12px; display: none; }
+  .auth-box .auth-success { color: #2e7d32; font-size: 13px; margin-bottom: 12px; display: none; }
+  .sidebar-user { padding: 8px 16px; font-size: 12px; color: rgba(255,255,255,0.7); display: flex; flex-direction: column; gap: 6px; }
+  .sidebar-user .user-email { font-weight: 600; color: #fff; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+  .sidebar-user .btn-signout { background: rgba(255,255,255,0.1); border: none; color: rgba(255,255,255,0.7); padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .sidebar-user .btn-signout:hover { background: rgba(255,255,255,0.2); color: #fff; }
 </style>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="debug-bar" style="position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;color:#fff;font-size:12px;font-family:monospace;padding:6px 12px;z-index:99999;max-height:120px;overflow-y:auto;display:none;"></div>
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo"><svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="6" height="48" rx="3" fill="#F99D1C"/><text x="18" y="34" font-family="Satoshi,'Segoe UI',sans-serif" font-weight="800" font-size="32" fill="#00356C">CES</text></svg></div>
+    <h1>Lead Generator</h1>
+    <p class="auth-sub">Sign in to access your leads and call logs</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+    <div id="auth-success" class="auth-success"></div>
+    <!-- Sign In -->
+    <div id="auth-panel-signin" class="auth-panel active">
+      <div class="form-group"><label>Email</label><input type="email" id="auth-email" placeholder="you@company.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <div class="form-group"><label>Password</label><input type="password" id="auth-password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+    </div>
+    <!-- Sign Up -->
+    <div id="auth-panel-signup" class="auth-panel">
+      <div class="form-group"><label>Email</label><input type="email" id="auth-new-email" placeholder="you@company.com" onkeydown="if(event.key==='Enter')doSignup()"/></div>
+      <div class="form-group"><label>Password</label><input type="password" id="auth-new-password" placeholder="Choose a password (min 6 chars)" onkeydown="if(event.key==='Enter')doSignup()"/></div>
+      <button class="btn btn-primary" onclick="doSignup()">Create Account</button>
+    </div>
+  </div>
+</div>
 <!-- SIDEBAR -->
-<nav id="sidebar"> <div class="sidebar-brand"> <!-- CES inline SVG logo — no network dependency --> <svg width="96" height="34" viewBox="0 0 96 34" xmlns="http://www.w3.org/2000/svg" style="display:block;margin-bottom:6px;"> <!-- Orange accent bar --> <rect x="0" y="0" width="4" height="34" rx="2" fill="#F99D1C"/> <!-- CES text --> <text x="12" y="25" font-family="Satoshi,'Segoe UI',system-ui,sans-serif" font-weight="800" font-size="26" letter-spacing="-0.5" fill="#ffffff">CES</text> <!-- Dot accent --> <circle cx="89" cy="22" r="3.5" fill="#F99D1C"/> </svg> <div class="tagline">IT Infrastructure · Lead Generator</div> </div> <div class="nav-section"> <button class="nav-btn active" onclick="showPage('discovery')">Lead Discovery</button> <button class="nav-btn" onclick="showPage('script')">Script Generator</button> <button class="nav-btn" onclick="showPage('tracker')">Call Tracker</button> <button class="nav-btn" onclick="showPage('api')">API Sources</button> </div> <hr/> <div class="stat-box"> <div class="stat-row"><span>Total Leads</span><span class="stat-val" id="stat-total">0</span></div> <div class="stat-row"><span>Calls Logged</span><span class="stat-val" id="stat-calls">0</span></div> <div class="stat-row"><span>Qualified</span><span class="stat-val" id="stat-qualified">0</span></div> </div> <div class="sidebar-footer">© CES Limited · Internal Tool</div>
+<nav id="sidebar"> <div class="sidebar-brand"> <!-- CES inline SVG logo — no network dependency --> <svg width="96" height="34" viewBox="0 0 96 34" xmlns="http://www.w3.org/2000/svg" style="display:block;margin-bottom:6px;"> <!-- Orange accent bar --> <rect x="0" y="0" width="4" height="34" rx="2" fill="#F99D1C"/> <!-- CES text --> <text x="12" y="25" font-family="Satoshi,'Segoe UI',system-ui,sans-serif" font-weight="800" font-size="26" letter-spacing="-0.5" fill="#ffffff">CES</text> <!-- Dot accent --> <circle cx="89" cy="22" r="3.5" fill="#F99D1C"/> </svg> <div class="tagline">IT Infrastructure · Lead Generator</div> </div> <div class="nav-section"> <button class="nav-btn active" onclick="showPage('discovery')">Lead Discovery</button> <button class="nav-btn" onclick="showPage('script')">Script Generator</button> <button class="nav-btn" onclick="showPage('tracker')">Call Tracker</button> <button class="nav-btn" onclick="showPage('api')">API Sources</button> </div> <hr/> <div class="stat-box"> <div class="stat-row"><span>Total Leads</span><span class="stat-val" id="stat-total">0</span></div> <div class="stat-row"><span>Calls Logged</span><span class="stat-val" id="stat-calls">0</span></div> <div class="stat-row"><span>Qualified</span><span class="stat-val" id="stat-qualified">0</span></div> </div> <div class="sidebar-user" id="sidebar-user" style="display:none;"> <span class="user-email" id="user-email"></span> <button class="btn-signout" onclick="doSignout()">Sign Out</button> </div> <div class="sidebar-footer">© CES Limited · Internal Tool</div>
 </nav> <!-- MAIN -->
 <main id="main"> <!-- PAGE: LEAD DISCOVERY -->
 <div id="page-discovery" class="page active"> <h1>Lead Discovery</h1> <p class="subtitle">Browse and filter IT infrastructure leads. Click <strong>Generate Script</strong> to build a tailored cold call script.</p> <div class="filter-bar"> <div class="filter-group"> <label>Industry</label> <select id="f-industry" onchange="renderLeads()" style="min-width:140px;"> <option value="">All Industries</option> </select> </div> <div class="filter-group"> <label>IT Type</label> <select id="f-ittype" onchange="renderLeads()"> <option value="">All Types</option> <option>Cloud</option><option>On-Premise</option><option>Hybrid</option> </select> </div> <div class="filter-group"> <label>Company Size</label> <select id="f-size" onchange="renderLeads()"> <option value="">All Sizes</option> <option>50-200</option><option>100-200</option><option>200-500</option> <option>500-1000</option><option>1000-5000</option> </select> </div> <div class="filter-group"> <label>Search</label> <input type="text" id="f-search" placeholder="Company or contact…" oninput="renderLeads()" style="width:210px;"/> </div> <div class="filter-group"> <label>&nbsp;</label> <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Clear</button> </div> <div class="filter-group" style="margin-left:auto;"> <label>&nbsp;</label> <div style="display:flex;gap:8px;"> <button class="btn btn-secondary btn-sm" onclick="openPainPointsGlance()" style="white-space:nowrap;">Pain Points Glance</button> <button class="btn btn-secondary btn-sm" id="refresh-pp-btn" onclick="refreshAllPainPoints()" style="white-space:nowrap;" title="Re-infer all pain points from latest research"> Refresh Pain Points</button> <button class="btn btn-primary btn-sm" onclick="openImportModal()" style="white-space:nowrap;">Import LinkedIn CSV</button> <button class="btn btn-danger btn-sm" id="clear-imported-btn" onclick="clearImportedLeads()" style="display:none;white-space:nowrap;">Clear Imported</button> </div> </div> </div> <div class="import-stats" id="import-stats" style="display:none;"></div> <div class="results-count" id="results-count"></div> <div id="lead-list"></div>
@@ -39,6 +88,74 @@
 // Supabase initialization
 const SUPABASE_URL = 'https://vdptdfliacwgyidfeqlm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcHRkZmxpYWN3Z3lpZGZlcWxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDQ3MTIsImV4cCI6MjA5Nzk4MDcxMn0.30f9jP83-oMtH9pV68ELVmTNrj_MtuP--evNAhfGKbA';
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+let supabase = null;
+let currentUser = null;
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.getAttribute('onclick').includes(tab)));
+  document.querySelectorAll('.auth-panel').forEach(p => p.classList.toggle('active', p.id === 'auth-panel-' + tab));
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-success').style.display = 'none';
+}
+
+function showAuthError(msg) { const el = document.getElementById('auth-error'); el.textContent = msg; el.style.display = 'block'; }
+function showAuthSuccess(msg) { const el = document.getElementById('auth-success'); el.textContent = msg; el.style.display = 'block'; }
+
+async function doLogin() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showAuthError('Please enter email and password.'); return; }
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) { showAuthError(error.message); return; }
+    currentUser = data.user;
+    onAuthSuccess();
+  } catch(e) { showAuthError(e.message); }
+}
+
+async function doSignup() {
+  const email = document.getElementById('auth-new-email').value.trim();
+  const password = document.getElementById('auth-new-password').value;
+  if (!email || !password) { showAuthError('Please enter email and password.'); return; }
+  if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+  try {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) { showAuthError(error.message); return; }
+    showAuthSuccess('Account created! Check your email to confirm, then sign in.');
+    switchAuthTab('signin');
+    document.getElementById('auth-email').value = email;
+  } catch(e) { showAuthError(e.message); }
+}
+
+async function doSignout() {
+  await supabase.auth.signOut();
+  currentUser = null;
+  document.getElementById('auth-overlay').classList.remove('hidden');
+  document.getElementById('sidebar-user').style.display = 'none';
+  document.getElementById('main').style.display = 'none';
+}
+
+function onAuthSuccess() {
+  document.getElementById('auth-overlay').classList.add('hidden');
+  document.getElementById('sidebar-user').style.display = 'flex';
+  document.getElementById('user-email').textContent = currentUser.email;
+  document.getElementById('main').style.display = 'flex';
+  if (!window._appInited) initApp();
+}
+
+async function initAuth() {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session && session.user) {
+    currentUser = session.user;
+    onAuthSuccess();
+  } else {
+    document.getElementById('auth-overlay').classList.remove('hidden');
+    document.getElementById('main').style.display = 'none';
+  }
+}
 
 
 // // DATA — MOCK LEADS (used for seeding on first run)
@@ -347,13 +464,8 @@ async function refreshAllPainPoints() {
   showToast(`Updated pain points for ${updated} leads from Gartner/McKinsey/Forrester research`);
 }
 
-(async function init() {
-  try {
-    window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  } catch(e) {
-    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#c62828;"><h2>Supabase failed to load</h2><p>Check your internet connection and reload.</p><pre>' + e.message + '</pre></div>';
-    return;
-  }
+window.initApp = async function() {
+  window._supabase = supabase;
   window._dbg = (msg) => {
     const bar = document.getElementById('debug-bar');
     bar.style.display = 'block';
@@ -361,22 +473,22 @@ async function refreshAllPainPoints() {
     bar.scrollTop = bar.scrollHeight;
     console.log('[DBG]', msg);
   };
-  window._dbg('init started, window.supabase=' + (typeof window.supabase));
+  window._dbg('init started');
   showToast('Loading data...');
   try {
-    window._dbg('fetching leads...'); const { data: dbLeads, error: leadsErr } = await window._supabase.from('leads').select('*').order('created_at'); window._dbg('leads result: ' + (leadsErr ? 'ERR:'+JSON.stringify(leadsErr) : (dbLeads ? dbLeads.length + ' rows' : 'null')));
+    window._dbg('fetching leads...'); const { data: dbLeads, error: leadsErr } = await supabase.from('leads').select('*').order('created_at'); window._dbg('leads result: ' + (leadsErr ? 'ERR:'+JSON.stringify(leadsErr) : (dbLeads ? dbLeads.length + ' rows' : 'null')));
     if (leadsErr) throw leadsErr;
 
     if (!dbLeads || dbLeads.length === 0) {
       const seedRows = LEADS.map(l => leadToDbRow(l));
-      const { data: seeded, error: seedErr } = await window._supabase.from('leads').insert(seedRows).select();
+      const { data: seeded, error: seedErr } = await supabase.from('leads').insert(seedRows).select();
       if (seedErr) throw seedErr;
       allLeads = (seeded || []).map(dbRowToLead);
     } else {
       allLeads = dbLeads.map(dbRowToLead);
     }
 
-    const { data: dbLogs, error: logsErr } = await window._supabase.from('call_logs').select('*').order('created_at');
+    const { data: dbLogs, error: logsErr } = await supabase.from('call_logs').select('*').order('created_at');
     if (logsErr) throw logsErr;
 
     callLog = (dbLogs || []).map(log => {
@@ -396,7 +508,7 @@ async function refreshAllPainPoints() {
       for (const lead of leadsNeedingUpdate) {
         const newPoints = inferPainPoints(lead.contact_title || '', lead.industry || '');
         if (newPoints.length) {
-          await window._supabase.from('leads').update({ pain_points: newPoints }).eq('id', lead.id);
+          await supabase.from('leads').update({ pain_points: newPoints }).eq('id', lead.id);
           lead.pain_points = newPoints;
         }
       }
@@ -409,13 +521,16 @@ async function refreshAllPainPoints() {
     updateSidebarStats();
     renderApolloTitleTags();
     updateApiKeyStatuses();
+    window._appInited = true;
     window._dbg('init complete, allLeads=' + allLeads.length); showToast('Ready'); document.getElementById('debug-bar').style.display='none';
   } catch (err) {
     window._dbg('CATCH: ' + (err.message || JSON.stringify(err)));
     console.error('Init error:', err);
     showToast('Error: ' + (err.message || err));
   }
-})();
+};
+
+initAuth();
 
 </script>
 </body>
