@@ -247,8 +247,18 @@ async function initAuth() {
     document.getElementById('auth-error').style.display = 'block';
     return;
   }
-  // Check for password recovery flow before getSession() clears the hash
-  const isRecovery = window.location.hash.includes('type=recovery');
+  // Listen for password recovery flow (fires during getSession below)
+  let isRecoveryFlow = false;
+  supabase.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      isRecoveryFlow = true;
+      hideAuthTabs();
+      document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('auth-panel-newpassword').classList.add('active');
+      document.getElementById('auth-overlay').classList.remove('hidden');
+      document.getElementById('main').style.display = 'none';
+    }
+  });
   document.getElementById('btn-login').onclick = doLogin;
   document.getElementById('btn-signup').onclick = doSignup;
   document.getElementById('btn-send-reset').onclick = doSendReset;
@@ -263,16 +273,10 @@ async function initAuth() {
   document.getElementById('auth-new-pw').onkeydown = e => { if (e.key === 'Enter') doSetNewPassword(); };
   document.getElementById('auth-confirm-pw').onkeydown = e => { if (e.key === 'Enter') doSetNewPassword(); };
   const { data: { session } } = await supabase.auth.getSession();
-  if (isRecovery && session && session.user) {
-    hideAuthTabs();
-    document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('auth-panel-newpassword').classList.add('active');
-    document.getElementById('auth-overlay').classList.remove('hidden');
-    document.getElementById('main').style.display = 'none';
-  } else if (session && session.user) {
+  if (session && session.user && !isRecoveryFlow) {
     currentUser = session.user;
     onAuthSuccess();
-  } else {
+  } else if (!isRecoveryFlow) {
     document.getElementById('auth-overlay').classList.remove('hidden');
     document.getElementById('main').style.display = 'none';
   }
