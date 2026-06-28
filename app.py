@@ -14,6 +14,10 @@ try:
     load_dotenv()
 except ImportError:
     pass
+try:
+    from supabase import create_client
+except ImportError:
+    create_client = None
 from mock_data import LEADS, INDUSTRIES, SIZES, IT_TYPES, CALL_STATUSES, SCRIPT_TEMPLATES
 
 # ─── Page Config ──────────────────────────────────────────────────────────────
@@ -24,23 +28,77 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── Authentication Gate ──────────────────────────────────────────────────────
-APP_PASSWORD = os.getenv("APP_PASSWORD")
-if APP_PASSWORD:
-    if "authenticated" not in st.session_state:
-        st.session_state.authenticated = False
+# ─── Supabase Client ──────────────────────────────────────────────────────────
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 
-    if not st.session_state.authenticated:
-        st.title("CES Lead Generator · Login")
-        st.markdown("Enter the app password to continue.")
-        password = st.text_input("Password", type="password")
-        if st.button("Login"):
-            if password == APP_PASSWORD:
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("Invalid password")
-        st.stop()
+supabase = None
+if SUPABASE_URL and SUPABASE_ANON_KEY and create_client:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+    except Exception:
+        supabase = None
+
+# ─── User Authentication ──────────────────────────────────────────────────────
+def do_login(email: str, password: str):
+    if not supabase:
+        st.error("Supabase not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env")
+        return False
+    try:
+        res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        st.session_state.user = res.user
+        st.session_state.user_email = res.user.email
+        st.rerun()
+    except Exception as e:
+        st.error(f"Login failed: {e}")
+    return False
+
+def do_signup(email: str, password: str):
+    if not supabase:
+        st.error("Supabase not configured.")
+        return
+    try:
+        res = supabase.auth.sign_up({"email": email, "password": password})
+        if res.user:
+            st.success("Account created! Check your email to confirm, then log in.")
+        else:
+            st.info("Check your email for the confirmation link.")
+    except Exception as e:
+        st.error(f"Sign up failed: {e}")
+
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "user_email" not in st.session_state:
+    st.session_state.user_email = None
+
+# Restore session from stored credentials
+if not st.session_state.user and supabase:
+    try:
+        session = supabase.auth.get_session()
+        if session and session.user:
+            st.session_state.user = session.user
+            st.session_state.user_email = session.user.email
+    except Exception:
+        pass
+
+if not st.session_state.user:
+    st.title("CES Lead Generator · Login")
+    tab1, tab2 = st.tabs(["Sign In", "Sign Up"])
+    with tab1:
+        with st.form("login_form"):
+            email = st.text_input("Email")
+            password = st.text_input("Password", type="password")
+            if st.form_submit_button("Sign In", type="primary"):
+                do_login(email, password)
+    with tab2:
+        with st.form("signup_form"):
+            new_email = st.text_input("Email")
+            new_password = st.text_input("Password", type="password")
+            if st.form_submit_button("Create Account", type="primary"):
+                do_signup(new_email, new_password)
+    st.stop()
+
+user_email = st.session_state.user_email
 
 # ─── Custom CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
@@ -129,6 +187,17 @@ with st.sidebar:
     st.markdown(f"**Total Leads:** {total}")
     st.markdown(f"**Calls Logged:** {contacted}")
     st.markdown(f"**Qualified:** {qualified}")
+    st.markdown("---")
+    st.markdown(f"👤 **{user_email}**", unsafe_allow_html=True)
+    if st.button("🚪 Sign Out"):
+        try:
+            if supabase:
+                supabase.auth.sign_out()
+        except Exception:
+            pass
+        st.session_state.user = None
+        st.session_state.user_email = None
+        st.rerun()
     st.markdown("---")
     st.markdown("<small style='color:#8899aa'>Powered by CES · Demo Mode</small>", unsafe_allow_html=True)
 
