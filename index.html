@@ -41,7 +41,6 @@
   .sidebar-user .btn-signout:hover { background: rgba(255,255,255,0.2); color: #fff; }
 </style>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="debug-bar" style="position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;color:#fff;font-size:12px;font-family:monospace;padding:6px 12px;z-index:99999;max-height:120px;overflow-y:auto;display:none;"></div>
@@ -177,8 +176,8 @@ function setAuthLoading(btnId, loading) {
 
 async function initAuth() {
   try {
-    if (!window.supabase) throw new Error('Supabase CDN not loaded');
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   } catch(e) {
     console.error('Auth init failed:', e);
     document.getElementById('auth-error').textContent = 'Failed to initialize auth: ' + e.message;
