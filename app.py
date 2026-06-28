@@ -7,7 +7,13 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+import html
 from datetime import datetime, date
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 from mock_data import LEADS, INDUSTRIES, SIZES, IT_TYPES, CALL_STATUSES, SCRIPT_TEMPLATES
 
 # ─── Page Config ──────────────────────────────────────────────────────────────
@@ -17,6 +23,24 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ─── Authentication Gate ──────────────────────────────────────────────────────
+APP_PASSWORD = os.getenv("APP_PASSWORD")
+if APP_PASSWORD:
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+
+    if not st.session_state.authenticated:
+        st.title("CES Lead Generator · Login")
+        st.markdown("Enter the app password to continue.")
+        password = st.text_input("Password", type="password")
+        if st.button("Login"):
+            if password == APP_PASSWORD:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Invalid password")
+        st.stop()
 
 # ─── Custom CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
@@ -66,7 +90,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ─── Session State ─────────────────────────────────────────────────────────────
-CALLS_FILE = os.path.join(os.path.dirname(__file__), "call_log.json")
+CALLS_FILE = os.getenv("CALL_LOG_PATH", os.path.join(os.path.dirname(__file__), "call_log.json"))
 
 def load_call_log():
     if os.path.exists(CALLS_FILE):
@@ -135,7 +159,7 @@ if page == "🔍 Lead Discovery":
     if f_size:
         leads = [l for l in leads if l["size"] in f_size]
     if f_search:
-        q = f_search.lower()
+        q = html.escape(f_search.lower())
         leads = [l for l in leads if q in l["company"].lower() or q in l["contact_name"].lower()]
 
     st.markdown(f"**{len(leads)} leads found**")
@@ -156,24 +180,24 @@ if page == "🔍 Lead Discovery":
                 <div class="lead-card">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
-                            <strong style="font-size:17px;">{lead['company']}</strong>
-                            &nbsp;<span class="badge {badge_class}">{lead['it_type']}</span>
-                            &nbsp;<span class="badge" style="background:#f3e5f5;color:#6a1b9a;">{lead['industry']}</span>
+                            <strong style="font-size:17px;">{html.escape(lead['company'])}</strong>
+                            &nbsp;<span class="badge {badge_class}">{html.escape(lead['it_type'])}</span>
+                            &nbsp;<span class="badge" style="background:#f3e5f5;color:#6a1b9a;">{html.escape(lead['industry'])}</span>
                         </div>
-                        <div style="color:#888; font-size:13px;">{lead['location']} · {lead['employees']} employees</div>
+                        <div style="color:#888; font-size:13px;">{html.escape(lead['location'])} · {html.escape(str(lead['employees']))} employees</div>
                     </div>
                     <div style="margin-top:8px; color:#444;">
-                        👤 <strong>{lead['contact_name']}</strong> — {lead['contact_title']}<br>
-                        📧 {lead['contact_email']} &nbsp;|&nbsp; 📱 {lead['contact_phone']}
+                        👤 <strong>{html.escape(lead['contact_name'])}</strong> — {html.escape(lead['contact_title'])}<br>
+                        📧 {html.escape(lead['contact_email'])} &nbsp;|&nbsp; 📱 {html.escape(lead['contact_phone'])}
                     </div>
                     <div style="margin-top:8px; color:#555; font-size:13px;">
-                        <strong>Current Infra:</strong> {lead['current_infra']}
+                        <strong>Current Infra:</strong> {html.escape(lead['current_infra'])}
                     </div>
                     <div style="margin-top:4px; font-size:13px; color:#c62828;">
-                        ⚠️ <strong>Pain Points:</strong> {' · '.join(lead['pain_points'])}
+                        ⚠️ <strong>Pain Points:</strong> {html.escape(' · '.join(lead['pain_points']))}
                     </div>
                     <div style="margin-top:4px; font-size:13px; color:#555;">
-                        💰 IT Budget: <strong>{lead['annual_it_budget']}</strong>
+                        💰 IT Budget: <strong>{html.escape(lead['annual_it_budget'])}</strong>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -256,7 +280,7 @@ elif page == "📝 Script Generator":
 
     for title, content in sections:
         st.markdown(f"**{title}**")
-        st.markdown(f'<div class="script-box">{content}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="script-box">{html.escape(content)}</div>', unsafe_allow_html=True)
 
     # Objection quick-reference
     with st.expander("💬 Common Objections — Quick Responses"):
@@ -319,7 +343,7 @@ elif page == "📊 Call Tracker":
                 "contact_title": lead["contact_title"],
                 "date": str(log_date),
                 "outcome": log_outcome,
-                "notes": log_notes,
+                "notes": html.escape(log_notes) if log_notes else "",
                 "follow_up": str(log_followup) if log_followup else None,
             }
             st.session_state.call_log.append(entry)
