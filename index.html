@@ -111,7 +111,9 @@
 </div> <!-- PAGE: CALL TRACKER -->
 <div id="page-tracker" class="page"> <h1>Call Tracker</h1> <p class="subtitle">Log your call outcomes, set follow-ups, and track your pipeline.</p> <div class="pipeline-row" id="pipeline-row"></div> <div id="followup-alert"></div> <div class="log-form"> <h3 style="margin-bottom:16px;"> Log a Call</h3> <div class="form-grid"> <div class="form-group"> <label>Lead</label> <select id="log-lead"></select> </div> <div class="form-group"> <label>Call Date</label> <input type="date" id="log-date"/> </div> <div class="form-group"> <label>Outcome</label> <select id="log-outcome"> <option>Prospect</option><option>Contacted</option><option>Voicemail</option> <option>Follow-up Scheduled</option><option>Qualified</option> <option>Not Interested</option><option>Closed Won</option> </select> </div> <div class="form-group"> <label>Follow-up Date (optional)</label> <input type="date" id="log-followup"/> </div> <div class="form-group" style="grid-column:1/-1;"> <label>Notes</label> <textarea id="log-notes" placeholder="What was discussed? Key objections? Next steps?"></textarea> </div> </div> <div style="margin-top:16px; display:flex; gap:10px;"> <button class="btn btn-primary" onclick="saveCall()">Save Call Log</button> <button class="btn btn-secondary" onclick="clearLogForm()">Clear</button> </div> </div> <div class="filter-bar" style="margin-bottom:16px;"> <div class="filter-group"> <label>Filter by Outcome</label> <select id="tracker-filter-outcome" onchange="renderCallLog()"> <option value="">All Outcomes</option> <option>Prospect</option><option>Contacted</option><option>Voicemail</option> <option>Follow-up Scheduled</option><option>Qualified</option> <option>Not Interested</option><option>Closed Won</option> </select> </div> <div class="filter-group"> <label>Search</label> <input type="text" id="tracker-search" placeholder="Company…" oninput="renderCallLog()" style="width:200px;"/> </div> <div class="filter-group"> <label>&nbsp;</label> <button class="btn btn-secondary btn-sm" onclick="exportCSV()">Export CSV</button> </div> </div> <div id="call-log-table"></div>
 </div> </main>
-<div id="toast"></div> <script>
+<div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
 // Supabase initialization
 const SUPABASE_URL = 'https://vdptdfliacwgyidfeqlm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcHRkZmxpYWN3Z3lpZGZlcWxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDQ3MTIsImV4cCI6MjA5Nzk4MDcxMn0.30f9jP83-oMtH9pV68ELVmTNrj_MtuP--evNAhfGKbA';
@@ -237,8 +239,8 @@ async function doSetNewPassword() {
 
 async function initAuth() {
   try {
-    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    if (!window.supabase || !window.supabase.createClient) throw new Error('Supabase CDN not loaded');
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   } catch(e) {
     console.error('Auth init failed:', e);
     document.getElementById('auth-error').textContent = 'Failed to initialize auth: ' + e.message;
