@@ -58,22 +58,22 @@
     <h1>Lead Generator</h1>
     <p class="auth-sub">Sign in to access your leads, scripts, and call tracker</p>
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</button>
-      <button class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button>
+      <button class="auth-tab active" data-tab="signin" onclick="switchAuthTab('signin')">Sign In</button>
+      <button class="auth-tab" data-tab="signup" onclick="switchAuthTab('signup')">Sign Up</button>
     </div>
     <div id="auth-error" class="auth-error"></div>
     <div id="auth-success" class="auth-success"></div>
     <!-- Sign In -->
     <div id="auth-panel-signin" class="auth-panel active">
-      <div class="form-group"><label>Work Email</label><input type="email" id="auth-email" placeholder="you@company.com" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-      <div class="form-group"><label>Password</label><input type="password" id="auth-password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+      <div class="form-group"><label>Work Email</label><input type="email" id="auth-email" placeholder="you@company.com" autocomplete="email"/></div>
+      <div class="form-group"><label>Password</label><input type="password" id="auth-password" placeholder="Enter your password" autocomplete="current-password"/></div>
+      <button class="btn btn-primary" id="btn-login">Sign In</button>
     </div>
     <!-- Sign Up -->
     <div id="auth-panel-signup" class="auth-panel">
-      <div class="form-group"><label>Work Email</label><input type="email" id="auth-new-email" placeholder="you@company.com" autocomplete="email" onkeydown="if(event.key==='Enter')doSignup()"/></div>
-      <div class="form-group"><label>Password</label><input type="password" id="auth-new-password" placeholder="Choose a password (min 6 chars)" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSignup()"/></div>
-      <button class="btn btn-primary" onclick="doSignup()">Create Account</button>
+      <div class="form-group"><label>Work Email</label><input type="email" id="auth-new-email" placeholder="you@company.com" autocomplete="email"/></div>
+      <div class="form-group"><label>Password</label><input type="password" id="auth-new-password" placeholder="Choose a password (min 6 chars)" autocomplete="new-password"/></div>
+      <button class="btn btn-primary" id="btn-signup">Create Account</button>
     </div>
     <div class="auth-divider"></div>
     <div class="auth-footer-text">CES Limited &middot; Internal Tool</div>
@@ -107,7 +107,7 @@ let supabase = null;
 let currentUser = null;
 
 function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.getAttribute('onclick').includes(tab)));
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-tab') === tab));
   document.querySelectorAll('.auth-panel').forEach(p => p.classList.toggle('active', p.id === 'auth-panel-' + tab));
   document.getElementById('auth-error').style.display = 'none';
   document.getElementById('auth-success').style.display = 'none';
@@ -120,12 +120,14 @@ async function doLogin() {
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
   if (!email || !password) { showAuthError('Please enter email and password.'); return; }
+  setAuthLoading('btn-login', true);
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setAuthLoading('btn-login', false);
     if (error) { showAuthError(error.message); return; }
     currentUser = data.user;
     onAuthSuccess();
-  } catch(e) { showAuthError(e.message); }
+  } catch(e) { setAuthLoading('btn-login', false); showAuthError(e.message); }
 }
 
 async function doSignup() {
@@ -133,8 +135,10 @@ async function doSignup() {
   const password = document.getElementById('auth-new-password').value;
   if (!email || !password) { showAuthError('Please enter email and password.'); return; }
   if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+  setAuthLoading('btn-signup', true);
   try {
     const { data, error } = await supabase.auth.signUp({ email, password });
+    setAuthLoading('btn-signup', false);
     if (error) { showAuthError(error.message); return; }
     if (data.session) {
       currentUser = data.user;
@@ -145,7 +149,7 @@ async function doSignup() {
       document.getElementById('auth-success').textContent = 'Account created! Check your email to confirm, then sign in.';
       document.getElementById('auth-success').style.display = 'block';
     }
-  } catch(e) { showAuthError(e.message); }
+  } catch(e) { setAuthLoading('btn-signup', false); showAuthError(e.message); }
 }
 
 async function doSignout() {
@@ -164,15 +168,29 @@ function onAuthSuccess() {
   if (!window._appInited) initApp();
 }
 
+function setAuthLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  if (loading) { btn._text = btn.textContent; btn.textContent = 'Please wait...'; btn.disabled = true; }
+  else { btn.textContent = btn._text || btn.textContent; btn.disabled = false; }
+}
+
 async function initAuth() {
   try {
     if (!window.supabase) throw new Error('Supabase CDN not loaded');
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   } catch(e) {
     console.error('Auth init failed:', e);
-    document.getElementById('auth-overlay').innerHTML = '<div class="auth-box"><p style="color:#c62828;">Failed to initialize auth: ' + e.message + '</p></div>';
+    document.getElementById('auth-error').textContent = 'Failed to initialize auth: ' + e.message;
+    document.getElementById('auth-error').style.display = 'block';
     return;
   }
+  document.getElementById('btn-login').onclick = doLogin;
+  document.getElementById('btn-signup').onclick = doSignup;
+  document.getElementById('auth-email').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
+  document.getElementById('auth-password').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
+  document.getElementById('auth-new-email').onkeydown = e => { if (e.key === 'Enter') doSignup(); };
+  document.getElementById('auth-new-password').onkeydown = e => { if (e.key === 'Enter') doSignup(); };
   const { data: { session } } = await supabase.auth.getSession();
   if (session && session.user) {
     currentUser = session.user;
