@@ -66,6 +66,7 @@
     <div id="auth-panel-signin" class="auth-panel active">
       <div class="form-group"><label>Work Email</label><input type="email" id="auth-email" placeholder="you@company.com" autocomplete="email"/></div>
       <div class="form-group"><label>Password</label><input type="password" id="auth-password" placeholder="Enter your password" autocomplete="current-password"/></div>
+      <div style="text-align:right;margin:-8px 0 10px;"><a href="#" id="forgot-password-link" style="font-size:12px;color:#00356C;text-decoration:none;">Forgot password?</a></div>
       <button class="btn btn-primary" id="btn-login">Sign In</button>
     </div>
     <!-- Sign Up -->
@@ -73,6 +74,20 @@
       <div class="form-group"><label>Work Email</label><input type="email" id="auth-new-email" placeholder="you@company.com" autocomplete="email"/></div>
       <div class="form-group"><label>Password</label><input type="password" id="auth-new-password" placeholder="Choose a password (min 6 chars)" autocomplete="new-password"/></div>
       <button class="btn btn-primary" id="btn-signup">Create Account</button>
+    </div>
+    <!-- Reset Password -->
+    <div id="auth-panel-reset" class="auth-panel">
+      <p style="font-size:13px;color:#555;margin-bottom:16px;text-align:left;">Enter your work email and we'll send you a password reset link.</p>
+      <div class="form-group"><label>Work Email</label><input type="email" id="auth-reset-email" placeholder="you@company.com" autocomplete="email"/></div>
+      <button class="btn btn-primary" id="btn-send-reset">Send Reset Link</button>
+      <div style="margin-top:12px;"><a href="#" id="back-to-signin" style="font-size:12px;color:#00356C;text-decoration:none;">← Back to Sign In</a></div>
+    </div>
+    <!-- Set New Password (recovery flow) -->
+    <div id="auth-panel-newpassword" class="auth-panel">
+      <p style="font-size:13px;color:#555;margin-bottom:16px;text-align:left;">Enter your new password.</p>
+      <div class="form-group"><label>New Password</label><input type="password" id="auth-new-pw" placeholder="Min 6 characters" autocomplete="new-password"/></div>
+      <div class="form-group"><label>Confirm Password</label><input type="password" id="auth-confirm-pw" placeholder="Re-enter new password" autocomplete="new-password"/></div>
+      <button class="btn btn-primary" id="btn-set-password">Update Password</button>
     </div>
     <div class="auth-divider"></div>
     <div class="auth-footer-text">CES Limited &middot; Internal Tool</div>
@@ -157,6 +172,7 @@ async function doSignout() {
   document.getElementById('auth-overlay').classList.remove('hidden');
   document.getElementById('sidebar-user').style.display = 'none';
   document.getElementById('main').style.display = 'none';
+  showAuthTabs();
 }
 
 function onAuthSuccess() {
@@ -174,6 +190,51 @@ function setAuthLoading(btnId, loading) {
   else { btn.textContent = btn._text || btn.textContent; btn.disabled = false; }
 }
 
+function hideAuthTabs() { document.querySelector('.auth-tabs').style.display = 'none'; }
+function showAuthTabs() {
+  document.querySelector('.auth-tabs').style.display = '';
+  document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('auth-panel-signin').classList.add('active');
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.auth-tab[data-tab="signin"]').classList.add('active');
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-success').style.display = 'none';
+}
+function showForgotPassword() {
+  hideAuthTabs();
+  document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('auth-panel-reset').classList.add('active');
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-success').style.display = 'none';
+}
+async function doSendReset() {
+  const email = document.getElementById('auth-reset-email').value.trim();
+  if (!email) { showAuthError('Please enter your email.'); return; }
+  setAuthLoading('btn-send-reset', true);
+  try {
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    setAuthLoading('btn-send-reset', false);
+    if (error) { showAuthError(error.message); return; }
+    showAuthSuccess('Password reset link sent! Check your email.');
+  } catch(e) { setAuthLoading('btn-send-reset', false); showAuthError(e.message); }
+}
+async function doSetNewPassword() {
+  const password = document.getElementById('auth-new-pw').value;
+  const confirm = document.getElementById('auth-confirm-pw').value;
+  if (!password || password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+  if (password !== confirm) { showAuthError('Passwords do not match.'); return; }
+  setAuthLoading('btn-set-password', true);
+  try {
+    const { error } = await supabase.auth.updateUser({ password });
+    setAuthLoading('btn-set-password', false);
+    if (error) { showAuthError(error.message); return; }
+    await supabase.auth.signOut();
+    showAuthSuccess('Password updated! Please sign in with your new password.');
+    setTimeout(() => showAuthTabs(), 2000);
+  } catch(e) { setAuthLoading('btn-set-password', false); showAuthError(e.message); }
+}
+
 async function initAuth() {
   try {
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
@@ -184,14 +245,29 @@ async function initAuth() {
     document.getElementById('auth-error').style.display = 'block';
     return;
   }
+  // Check for password recovery flow before getSession() clears the hash
+  const isRecovery = window.location.hash.includes('type=recovery');
   document.getElementById('btn-login').onclick = doLogin;
   document.getElementById('btn-signup').onclick = doSignup;
+  document.getElementById('btn-send-reset').onclick = doSendReset;
+  document.getElementById('btn-set-password').onclick = doSetNewPassword;
+  document.getElementById('forgot-password-link').onclick = e => { e.preventDefault(); showForgotPassword(); };
+  document.getElementById('back-to-signin').onclick = e => { e.preventDefault(); showAuthTabs(); };
   document.getElementById('auth-email').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
   document.getElementById('auth-password').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
   document.getElementById('auth-new-email').onkeydown = e => { if (e.key === 'Enter') doSignup(); };
   document.getElementById('auth-new-password').onkeydown = e => { if (e.key === 'Enter') doSignup(); };
+  document.getElementById('auth-reset-email').onkeydown = e => { if (e.key === 'Enter') doSendReset(); };
+  document.getElementById('auth-new-pw').onkeydown = e => { if (e.key === 'Enter') doSetNewPassword(); };
+  document.getElementById('auth-confirm-pw').onkeydown = e => { if (e.key === 'Enter') doSetNewPassword(); };
   const { data: { session } } = await supabase.auth.getSession();
-  if (session && session.user) {
+  if (isRecovery && session && session.user) {
+    hideAuthTabs();
+    document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('auth-panel-newpassword').classList.add('active');
+    document.getElementById('auth-overlay').classList.remove('hidden');
+    document.getElementById('main').style.display = 'none';
+  } else if (session && session.user) {
     currentUser = session.user;
     onAuthSuccess();
   } else {
