@@ -891,10 +891,11 @@ async function refreshAllPainPoints() {
 let editSolutionId = null;
 async function loadSolutions() {
   try {
-    const { data: dbSolutions } = await supabase.from('solutions').select('*').order('created_at');
-    if (!dbSolutions || dbSolutions.length === 0) {
-      const { data: seeded } = await supabase.from('solutions').insert(SEED_SOLUTIONS).select();
-      solutions = seeded || [];
+    const { data: dbSolutions, error } = await supabase.from('solutions').select('*').order('created_at');
+    if (error || !dbSolutions || dbSolutions.length === 0) {
+      const { data: seeded, error: seedErr } = await supabase.from('solutions').insert(SEED_SOLUTIONS).select();
+      if (seedErr || !seeded) { solutions = SEED_SOLUTIONS; return; }
+      solutions = seeded;
     } else {
       solutions = dbSolutions;
     }
