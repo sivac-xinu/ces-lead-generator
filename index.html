@@ -135,7 +135,7 @@ window.__supabaseCreateClient = createClient;
 ║  Supabase Dashboard → SQL Editor before using admin features.   ║
 ╚══════════════════════════════════════════════════════════════════╝
 
--- 1. Create profiles table for role management + approval
+-- 1. Create profiles table for role management + approval (safe to re-run)
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT,
@@ -145,31 +145,37 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
--- 2. RLS: users read own profile, admins read all
+-- Add approved column if upgrading from older schema
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS approved BOOLEAN NOT NULL DEFAULT false;
+
+-- 2. RLS policies (drop first so this SQL is safe to re-run)
+DROP POLICY IF EXISTS "profiles_select_own" ON profiles;
 CREATE POLICY "profiles_select_own"
   ON profiles FOR SELECT
   USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "profiles_select_admin" ON profiles;
 CREATE POLICY "profiles_select_admin"
   ON profiles FOR SELECT
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
--- 3. RLS: only admins can update profiles (role + approved status)
+DROP POLICY IF EXISTS "profiles_update_admin" ON profiles;
 CREATE POLICY "profiles_update_admin"
   ON profiles FOR UPDATE
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'))
   WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
--- 4. RLS: only admins can insert profiles (for bootstrapping)
+DROP POLICY IF EXISTS "profiles_insert_admin" ON profiles;
 CREATE POLICY "profiles_insert_admin"
   ON profiles FOR INSERT
   WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
--- 4b. RLS: only admins can delete profiles (reject user)
+DROP POLICY IF EXISTS "profiles_delete_admin" ON profiles;
 CREATE POLICY "profiles_delete_admin"
   ON profiles FOR DELETE
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
--- 5. Auto-create profile on signup (runs as SECURITY DEFINER, bypasses RLS)
+-- 3. Auto-create profile on signup (runs as SECURITY DEFINER, bypasses RLS)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -183,12 +189,8 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 6. Bootstrap your admin account (run ONCE after creating your account):
+-- 4. Bootstrap your admin account (run ONCE after creating your account):
 --    UPDATE profiles SET role = 'admin', approved = true WHERE email = 'your@email.com';
-
--- 7. Also allow admins to insert profiles for existing auth users:
---    DROP POLICY IF EXISTS "profiles_insert_admin" ON profiles;
---    (The insert policy above already handles this)
 -->
 <script>
 // Supabase initialization
