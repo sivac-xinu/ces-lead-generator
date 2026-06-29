@@ -435,6 +435,7 @@ async function rejectUser(userId, email) {
   } catch(e) { showToast('Error: ' + e.message); }
 }
 async function renderAdmin() {
+  await refreshUserRole();
   if (currentUserRole !== 'admin') { document.getElementById('page-admin').innerHTML = '<p style="color:#c62828;">Access denied.</p>'; return; }
   const el = document.getElementById('admin-user-list');
   el.innerHTML = '<p>Loading users...</p>';
@@ -546,7 +547,17 @@ function updateSidebarStats() { document.getElementById('stat-total').textConten
 }
 function currentLeadId() { return parseInt(document.getElementById('script-lead-select').value);
 } // // NAVIGATION
-function showPage(page) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById('page-' + page).classList.add('active'); const idx = { discovery:0, script:1, tracker:2, api:3, admin:4 }[page]; document.querySelectorAll('.nav-btn')[idx].classList.add('active'); if (page === 'script') renderScript(); if (page === 'tracker') renderTracker(); if (page === 'api') initApiPage(); if (page === 'admin') renderAdmin();
+async function refreshUserRole() {
+  if (!currentUser) return;
+  try {
+    const { data } = await supabase.from('profiles').select('role').eq('id', currentUser.id).single();
+    if (data) {
+      currentUserRole = data.role;
+      document.getElementById('nav-admin').style.display = data.role === 'admin' ? '' : 'none';
+    }
+  } catch(e) { /* ignore */ }
+}
+function showPage(page) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById('page-' + page).classList.add('active'); const idx = { discovery:0, script:1, tracker:2, api:3, admin:4 }[page]; document.querySelectorAll('.nav-btn')[idx].classList.add('active'); if (page === 'script') renderScript(); if (page === 'tracker') renderTracker(); if (page === 'api') initApiPage(); if (page === 'admin') renderAdmin(); refreshUserRole(); }
 } function goToScript(leadId) { selectedLeadId = leadId; showPage('script'); }
 function goToTracker(leadId) { selectedLeadId = leadId; showPage('tracker'); setTimeout(() => { document.getElementById('log-lead').value = leadId; document.querySelector('.log-form').scrollIntoView({ behavior: 'smooth' }); }, 50);
 } // // LEAD DISCOVERY
