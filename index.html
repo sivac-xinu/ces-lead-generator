@@ -94,7 +94,8 @@
   </div>
 </div>
 <!-- SIDEBAR -->
-<nav id="sidebar"> <div class="sidebar-brand"> <!-- CES inline SVG logo — no network dependency --> <svg width="96" height="34" viewBox="0 0 96 34" xmlns="http://www.w3.org/2000/svg" style="display:block;margin-bottom:6px;"> <!-- Orange accent bar --> <rect x="0" y="0" width="4" height="34" rx="2" fill="#F99D1C"/> <!-- CES text --> <text x="12" y="25" font-family="Satoshi,'Segoe UI',system-ui,sans-serif" font-weight="800" font-size="26" letter-spacing="-0.5" fill="#ffffff">CES</text> <!-- Dot accent --> <circle cx="89" cy="22" r="3.5" fill="#F99D1C"/> </svg> <div class="tagline">IT Infrastructure · Lead Generator</div> </div> <div class="nav-section"> <button class="nav-btn active" onclick="showPage('discovery')">Lead Discovery</button> <button class="nav-btn" onclick="showPage('script')">Script Generator</button> <button class="nav-btn" onclick="showPage('tracker')">Call Tracker</button> <button class="nav-btn" onclick="showPage('api')">API Sources</button> </div> <hr/> <div class="stat-box"> <div class="stat-row"><span>Total Leads</span><span class="stat-val" id="stat-total">0</span></div> <div class="stat-row"><span>Calls Logged</span><span class="stat-val" id="stat-calls">0</span></div> <div class="stat-row"><span>Qualified</span><span class="stat-val" id="stat-qualified">0</span></div> </div> <div class="sidebar-user" id="sidebar-user" style="display:none;"> <span class="user-email" id="user-email"></span> <button class="btn-signout" onclick="doSignout()">Sign Out</button> </div> <div class="sidebar-footer">© CES Limited · Internal Tool</div>
+<nav id="sidebar"> <div class="sidebar-brand"> <!-- CES inline SVG logo — no network dependency --> <svg width="96" height="34" viewBox="0 0 96 34" xmlns="http://www.w3.org/2000/svg" style="display:block;margin-bottom:6px;"> <!-- Orange accent bar --> <rect x="0" y="0" width="4" height="34" rx="2" fill="#F99D1C"/> <!-- CES text --> <text x="12" y="25" font-family="Satoshi,'Segoe UI',system-ui,sans-serif" font-weight="800" font-size="26" letter-spacing="-0.5" fill="#ffffff">CES</text> <!-- Dot accent --> <circle cx="89" cy="22" r="3.5" fill="#F99D1C"/> </svg> <div class="tagline">IT Infrastructure · Lead Generator</div> </div> <div class="nav-section"> <button class="nav-btn active" onclick="showPage('discovery')">Lead Discovery</button> <button class="nav-btn" onclick="showPage('script')">Script Generator</button> <button class="nav-btn" onclick="showPage('tracker')">Call Tracker</button>     <button class="nav-btn" onclick="showPage('api')">API Sources</button>
+    <button class="nav-btn" id="nav-admin" onclick="showPage('admin')" style="display:none;">Admin</button> </div> <hr/> <div class="stat-box"> <div class="stat-row"><span>Total Leads</span><span class="stat-val" id="stat-total">0</span></div> <div class="stat-row"><span>Calls Logged</span><span class="stat-val" id="stat-calls">0</span></div> <div class="stat-row"><span>Qualified</span><span class="stat-val" id="stat-qualified">0</span></div> </div> <div class="sidebar-user" id="sidebar-user" style="display:none;"> <span class="user-email" id="user-email"></span> <button class="btn-signout" onclick="doSignout()">Sign Out</button> </div> <div class="sidebar-footer">© CES Limited · Internal Tool</div>
 </nav> <!-- MAIN -->
 <main id="main"> <!-- PAGE: LEAD DISCOVERY -->
 <div id="page-discovery" class="page active"> <h1>Lead Discovery</h1> <p class="subtitle">Browse and filter IT infrastructure leads. Click <strong>Generate Script</strong> to build a tailored cold call script.</p> <div class="filter-bar"> <div class="filter-group"> <label>Industry</label> <select id="f-industry" onchange="renderLeads()" style="min-width:140px;"> <option value="">All Industries</option> </select> </div> <div class="filter-group"> <label>IT Type</label> <select id="f-ittype" onchange="renderLeads()"> <option value="">All Types</option> <option>Cloud</option><option>On-Premise</option><option>Hybrid</option> </select> </div> <div class="filter-group"> <label>Company Size</label> <select id="f-size" onchange="renderLeads()"> <option value="">All Sizes</option> <option>50-200</option><option>100-200</option><option>200-500</option> <option>500-1000</option><option>1000-5000</option> </select> </div> <div class="filter-group"> <label>Search</label> <input type="text" id="f-search" placeholder="Company or contact…" oninput="renderLeads()" style="width:210px;"/> </div> <div class="filter-group"> <label>&nbsp;</label> <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Clear</button> </div> <div class="filter-group" style="margin-left:auto;"> <label>&nbsp;</label> <div style="display:flex;gap:8px;"> <button class="btn btn-secondary btn-sm" onclick="openPainPointsGlance()" style="white-space:nowrap;">Pain Points Glance</button> <button class="btn btn-secondary btn-sm" id="refresh-pp-btn" onclick="refreshAllPainPoints()" style="white-space:nowrap;" title="Re-infer all pain points from latest research"> Refresh Pain Points</button> <button class="btn btn-primary btn-sm" onclick="openImportModal()" style="white-space:nowrap;">Import LinkedIn CSV</button> <button class="btn btn-danger btn-sm" id="clear-imported-btn" onclick="clearImportedLeads()" style="display:none;white-space:nowrap;">Clear Imported</button> </div> </div> </div> <div class="import-stats" id="import-stats" style="display:none;"></div> <div class="results-count" id="results-count"></div> <div id="lead-list"></div>
@@ -110,12 +111,68 @@
 <div id="page-script" class="page"> <h1>Script Generator</h1> <p class="subtitle">Select a lead and tone — get a complete, tailored cold call script with CES solution mapping and sentiment-matched language.</p> <!-- Controls --> <div class="script-controls"> <div class="script-controls-row" style="margin-bottom:16px;"> <div class="filter-group" style="flex:1; min-width:260px;"> <label>Select Lead</label> <select id="script-lead-select" onchange="renderScript()" style="width:100%;"></select> </div> </div> <div class="filter-group"> <label>Call Tone / Sentiment</label> <div class="tone-selector" id="tone-selector"> <!-- injected by JS --> </div> </div> </div> <div class="script-page-grid"> <!-- LEFT: Script output --> <div> <!-- Metrics --> <div class="metrics-row" id="script-metrics"></div> <!-- Script actions --> <div class="script-actions"> <button class="btn btn-primary btn-sm" onclick="downloadScript()">Download Script</button> <button class="btn btn-secondary btn-sm" onclick="copyScript()">Copy to Clipboard</button> <button class="btn btn-secondary btn-sm" onclick="goToTracker(currentLeadId())">Log a Call</button> </div> <!-- Script sections --> <div id="script-output"></div> <!-- Objections --> <button class="objections-toggle" onclick="toggleObjections()"> <span id="obj-toggle-label">Show Common Objections</span> </button> <div class="objections-panel" id="objections-panel"></div> </div> <!-- RIGHT: Pain → Solutions + Talking Points --> <div class="right-panel-sticky"> <div style="margin-bottom:14px;"> <h3 style="margin-bottom:12px; font-size:14px; color:#00356C;">Pain Points → CES Solutions</h3> <div class="solutions-grid" id="solutions-grid"></div> </div> <div class="talking-points"> <h3 style="font-size:13px;">Key Talking Points</h3> <div id="talking-points-list"></div> </div> </div> </div>
 </div> <!-- PAGE: CALL TRACKER -->
 <div id="page-tracker" class="page"> <h1>Call Tracker</h1> <p class="subtitle">Log your call outcomes, set follow-ups, and track your pipeline.</p> <div class="pipeline-row" id="pipeline-row"></div> <div id="followup-alert"></div> <div class="log-form"> <h3 style="margin-bottom:16px;"> Log a Call</h3> <div class="form-grid"> <div class="form-group"> <label>Lead</label> <select id="log-lead"></select> </div> <div class="form-group"> <label>Call Date</label> <input type="date" id="log-date"/> </div> <div class="form-group"> <label>Outcome</label> <select id="log-outcome"> <option>Prospect</option><option>Contacted</option><option>Voicemail</option> <option>Follow-up Scheduled</option><option>Qualified</option> <option>Not Interested</option><option>Closed Won</option> </select> </div> <div class="form-group"> <label>Follow-up Date (optional)</label> <input type="date" id="log-followup"/> </div> <div class="form-group" style="grid-column:1/-1;"> <label>Notes</label> <textarea id="log-notes" placeholder="What was discussed? Key objections? Next steps?"></textarea> </div> </div> <div style="margin-top:16px; display:flex; gap:10px;"> <button class="btn btn-primary" onclick="saveCall()">Save Call Log</button> <button class="btn btn-secondary" onclick="clearLogForm()">Clear</button> </div> </div> <div class="filter-bar" style="margin-bottom:16px;"> <div class="filter-group"> <label>Filter by Outcome</label> <select id="tracker-filter-outcome" onchange="renderCallLog()"> <option value="">All Outcomes</option> <option>Prospect</option><option>Contacted</option><option>Voicemail</option> <option>Follow-up Scheduled</option><option>Qualified</option> <option>Not Interested</option><option>Closed Won</option> </select> </div> <div class="filter-group"> <label>Search</label> <input type="text" id="tracker-search" placeholder="Company…" oninput="renderCallLog()" style="width:200px;"/> </div> <div class="filter-group"> <label>&nbsp;</label> <button class="btn btn-secondary btn-sm" onclick="exportCSV()">Export CSV</button> </div> </div> <div id="call-log-table"></div>
+</div> <!-- PAGE: ADMIN -->
+<div id="page-admin" class="page"> <h1>Admin</h1> <p class="subtitle">Manage user roles and access. Only the Super Admin can promote users to Admin.</p> <div style="background:#fff8e1;border-radius:8px;padding:12px 16px;font-size:12px;color:#6d4c00;margin-bottom:20px;"> <strong>Note:</strong> Users listed here signed up through the app and have an auto-created profile. If a user signed up but doesn't appear, have them sign in once to create their profile. </div> <div id="admin-user-list"></div>
 </div> </main>
 <div id="toast"></div>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 window.__supabaseCreateClient = createClient;
 </script>
+<!--
+╔══════════════════════════════════════════════════════════════════╗
+║  SUPABASE SETUP — run these SQL statements in your              ║
+║  Supabase Dashboard → SQL Editor before using admin features.   ║
+╚══════════════════════════════════════════════════════════════════╝
+
+-- 1. Create profiles table for role management
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT,
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- 2. RLS: users read own profile, admins read all
+CREATE POLICY "profiles_select_own"
+  ON profiles FOR SELECT
+  USING (auth.uid() = id);
+CREATE POLICY "profiles_select_admin"
+  ON profiles FOR SELECT
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- 3. RLS: only admins can update profiles
+CREATE POLICY "profiles_update_admin"
+  ON profiles FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- 4. RLS: only admins can insert profiles (for bootstrapping)
+CREATE POLICY "profiles_insert_admin"
+  ON profiles FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- 5. Auto-create profile on signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, role)
+  VALUES (NEW.id, NEW.email, 'user');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 6. After you sign up through the app, promote yourself to admin:
+--    UPDATE profiles SET role = 'admin' WHERE email = 'your@email.com';
+
+-- 7. Also allow admins to insert profiles for existing auth users:
+--    DROP POLICY IF EXISTS "profiles_insert_admin" ON profiles;
+--    (The insert policy above already handles this)
+-->
 <script>
 // Supabase initialization
 const SUPABASE_URL = 'https://vdptdfliacwgyidfeqlm.supabase.co';
@@ -128,6 +185,7 @@ const __resetError = __hashParams.get('error_description') || '';
 // ─── Auth ────────────────────────────────────────────────────────────────────
 let supabase = null;
 let currentUser = null;
+let currentUserRole = 'user';
 
 function switchAuthTab(tab) {
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-tab') === tab));
@@ -184,11 +242,28 @@ async function doSignout() {
   showAuthTabs();
 }
 
-function onAuthSuccess() {
+async function onAuthSuccess() {
   document.getElementById('auth-overlay').classList.add('hidden');
   document.getElementById('sidebar-user').style.display = 'flex';
   document.getElementById('user-email').textContent = currentUser.email;
   document.getElementById('main').style.display = 'flex';
+  // Fetch or create profile for role management
+  try {
+    let { data: profile } = await supabase.from('profiles').select('role').eq('id', currentUser.id).single();
+    if (!profile) {
+      // Existing user without a profile — insert one
+      await supabase.from('profiles').insert({ id: currentUser.id, email: currentUser.email, role: 'user' });
+      currentUserRole = 'user';
+    } else {
+      currentUserRole = profile.role;
+    }
+  } catch(e) {
+    currentUserRole = 'user';
+  }
+  // Show admin nav button if admin
+  if (currentUserRole === 'admin') {
+    document.getElementById('nav-admin').style.display = '';
+  }
   if (!window._appInited) initApp();
 }
 
@@ -293,6 +368,36 @@ async function initAuth() {
 }
 
 
+// ─── Admin ───────────────────────────────────────────────────────────────────
+async function renderAdmin() {
+  if (currentUserRole !== 'admin') { document.getElementById('page-admin').innerHTML = '<p style="color:#c62828;">Access denied.</p>'; return; }
+  const el = document.getElementById('admin-user-list');
+  el.innerHTML = '<p>Loading users...</p>';
+  try {
+    const { data, error } = await supabase.from('profiles').select('*').order('created_at');
+    if (error) { el.innerHTML = '<p style="color:#c62828;">Error: ' + error.message + '</p>'; return; }
+    if (!data || !data.length) { el.innerHTML = '<p>No users found.</p>'; return; }
+    let html = '<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f0f4f8;"><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Email</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Role</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Joined</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Actions</th></tr></thead><tbody>';
+    for (const user of data) {
+      const isSelf = user.id === currentUser.id;
+      const joined = user.created_at ? new Date(user.created_at).toLocaleDateString() : '—';
+      html += '<tr style="border-bottom:1px solid #e0e4f0;"><td style="padding:10px 12px;font-size:13px;">' + (user.email || '—') + (isSelf ? ' <span style="font-size:11px;color:#888;">(you)</span>' : '') + '</td><td style="padding:10px 12px;font-size:13px;"><span style="display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;' + (user.role === 'admin' ? 'background:#e3f2fd;color:#00356C;' : 'background:#eee;color:#666;') + '">' + user.role + '</span></td><td style="padding:10px 12px;font-size:12px;color:#888;">' + joined + '</td><td style="padding:10px 12px;">' + (isSelf ? '<span style="font-size:11px;color:#aaa;">Cannot change own role</span>' : '<select onchange="changeUserRole(\'' + user.id + '\',this.value)" style="padding:5px 8px;border:1px solid #d0d8ee;border-radius:6px;font-size:12px;"><option value="user"' + (user.role === 'user' ? ' selected' : '') + '>User</option><option value="admin"' + (user.role === 'admin' ? ' selected' : '') + '>Admin</option></select>') + '</td></tr>';
+    }
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<p style="color:#c62828;">Error: ' + e.message + '</p>';
+  }
+}
+async function changeUserRole(userId, newRole) {
+  if (currentUserRole !== 'admin') return;
+  try {
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
+    if (error) { showToast('Error: ' + error.message); return; }
+    showToast('Role updated to ' + newRole);
+    renderAdmin();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
 // // DATA — MOCK LEADS (used for seeding on first run)
 const LEADS = [ { id:1, company:"Meridian Financial Group", industry:"Finance", size:"500-1000", location:"New York, NY", it_type:"Hybrid", contact_name:"James Thornton", contact_title:"CTO", contact_email:"j.thornton@meridianfg.com", contact_phone:"+1 (212) 555-0147", current_infra:"On-prem servers aging out, partial Azure migration", pain_points:["Legacy hardware maintenance costs — cloud migration overdue","DR/backup gaps with no cloud failover","Compliance (SOX) must carry through cloud migration"], annual_it_budget:"$4.2M", employees:720 }, { id:2, company:"Crestview Healthcare Systems",industry:"Healthcare", size:"1000-5000", location:"Chicago, IL", it_type:"On-Premise", contact_name:"Dr. Sandra Koh", contact_title:"VP of IT", contact_email:"s.koh@crestviewhealth.org", contact_phone:"+1 (312) 555-0283", current_infra:"Aging VMware environment, no cloud footprint", pain_points:["HIPAA compliance burden","Uptime requirements (99.99%)","EHR system latency"], annual_it_budget:"$11.5M", employees:2400 }, { id:3, company:"Pinnacle Logistics Co.", industry:"Logistics", size:"200-500", location:"Dallas, TX", it_type:"Cloud", contact_name:"Marcus Ellis", contact_title:"IT Director", contact_email:"m.ellis@pinnaclelogistics.com", contact_phone:"+1 (469) 555-0391", current_infra:"AWS-heavy, single cloud, no MSP relationship", pain_points:["Cloud cost overruns","No 24/7 support","Security posture gaps — unpatched vulnerabilities across AWS workloads"], annual_it_budget:"$1.8M", employees:340 }, { id:4, company:"Redwood Manufacturing Inc.", industry:"Manufacturing", size:"500-1000", location:"Detroit, MI", it_type:"On-Premise", contact_name:"Linda Vasquez", contact_title:"Head of Infrastructure", contact_email:"l.vasquez@redwoodmfg.com", contact_phone:"+1 (313) 555-0512", current_infra:"Physical servers, no virtualization, running EOL Windows Server 2012", pain_points:["EOL OS risk — Windows Server 2012 no longer receiving security patches","Cloud migration needed but no roadmap","OT/IT convergence challenges — no vulnerability scanning on plant floor systems"], annual_it_budget:"$2.9M", employees:870 }, { id:5, company:"Atlas Education Group", industry:"Education", size:"200-500", location:"Boston, MA", it_type:"Cloud", contact_name:"Tom Nguyen", contact_title:"CIO", contact_email:"t.nguyen@atlasedu.org", contact_phone:"+1 (617) 555-0678", current_infra:"Google Workspace + Azure AD, no unified security layer", pain_points:["Student data privacy (FERPA)","Ransomware exposure","Budget constraints"], annual_it_budget:"$900K", employees:280 }, { id:6, company:"Summit Retail Partners", industry:"Retail", size:"1000-5000", location:"Atlanta, GA", it_type:"Hybrid", contact_name:"Rachel Moore", contact_title:"VP Technology", contact_email:"r.moore@summitretail.com", contact_phone:"+1 (404) 555-0734", current_infra:"Mixed AWS + on-prem POS systems, 80 locations", pain_points:["PCI-DSS compliance across locations","Network latency at stores","Centralized IT visibility"], annual_it_budget:"$8.3M", employees:3100 }, { id:7, company:"Keystone Legal LLP", industry:"Legal", size:"100-200", location:"San Francisco, CA", it_type:"On-Premise", contact_name:"David Park", contact_title:"IT Manager", contact_email:"d.park@keystonelegal.com", contact_phone:"+1 (415) 555-0845", current_infra:"Local file servers, no cloud backup, single IT staff", pain_points:["Data loss risk","No IT redundancy","Client confidentiality compliance"], annual_it_budget:"$450K", employees:130 }, { id:8, company:"Orion Energy Solutions", industry:"Energy", size:"500-1000", location:"Houston, TX", it_type:"Hybrid", contact_name:"Brian Cole", contact_title:"CTO", contact_email:"b.cole@orionenergy.com", contact_phone:"+1 (713) 555-0962", current_infra:"Azure + on-prem SCADA systems, minimal cybersecurity stack", pain_points:["OT security gaps","Regulatory compliance (NERC CIP)","Cloud expansion needs"], annual_it_budget:"$5.7M", employees:610 }, { id:9, company:"Bright Minds EdTech", industry:"Technology", size:"50-200", location:"Austin, TX", it_type:"Cloud", contact_name:"Priya Shah", contact_title:"Head of Engineering", contact_email:"p.shah@brightminds.io", contact_phone:"+1 (512) 555-1023", current_infra:"Multi-cloud (AWS + GCP), fast-growing, no managed security", pain_points:["Scaling infrastructure quickly","DevSecOps gaps","Cost visibility across clouds"], annual_it_budget:"$700K", employees:95 }, { id:10, company:"National Property Trust", industry:"Real Estate", size:"200-500", location:"Phoenix, AZ", it_type:"Hybrid", contact_name:"Kevin Walsh", contact_title:"Director of IT", contact_email:"k.walsh@nationalproperty.com", contact_phone:"+1 (602) 555-1134", current_infra:"Microsoft 365 + aging on-prem, no MDM solution", pain_points:["Remote workforce security","No endpoint management","Vendor sprawl"], annual_it_budget:"$1.2M", employees:260 }, { id:11, company:"Vantage Insurance Group", industry:"Insurance", size:"1000-5000", location:"Hartford, CT", it_type:"On-Premise", contact_name:"Angela Torres", contact_title:"SVP Information Technology",contact_email:"a.torres@vantageinsurance.com", contact_phone:"+1 (860) 555-1247", current_infra:"Legacy mainframe + Windows servers, cloud strategy in evaluation", pain_points:["Mainframe migration to cloud — complexity and risk","VMware licensing shock post-Broadcom acquisition","Cyber insurance requiring documented cloud migration roadmap"], annual_it_budget:"$14.2M", employees:1800 }, { id:12, company:"Clearwater Biotech", industry:"Biotech", size:"200-500", location:"San Diego, CA", it_type:"Cloud", contact_name:"Dr. Nina Petrov", contact_title:"VP IT & Data", contact_email:"n.petrov@clearwaterbio.com", contact_phone:"+1 (858) 555-1358", current_infra:"AWS HPC clusters for R&D, minimal enterprise IT", pain_points:["FDA 21 CFR Part 11 compliance","Data integrity for trials","IT/Research alignment"], annual_it_budget:"$3.1M", employees:320 }, { id:13, company:"Trident Media Group", industry:"Media & Entertainment", size:"500-1000", location:"Los Angeles, CA", it_type:"On-Premise", contact_name:"Carlos Reyes", contact_title:"VP of Technology", contact_email:"c.reyes@tridentmedia.com", contact_phone:"+1 (213) 555-1470", current_infra:"On-prem data center (2 racks), 3-year lease expiring Q3 2025, VMware vSphere 6.7 running 80 VMs", pain_points:["Data center lease expiring — forced migration decision","VMware licensing costs tripled post-Broadcom","No cloud migration roadmap or internal expertise"], annual_it_budget:"$3.8M", employees:680 }, { id:14, company:"Garrison Capital Partners", industry:"Finance", size:"200-500", location:"Chicago, IL", it_type:"Hybrid", contact_name:"Michelle Grant", contact_title:"CTO", contact_email:"m.grant@garrisoncap.com", contact_phone:"+1 (312) 555-1581", current_infra:"Primary workloads on aging on-prem (EOL Dell PowerEdge), partial Azure migration stalled mid-way, no cloud governance", pain_points:["Stalled cloud migration — 40% of workloads still on-prem","Azure costs uncontrolled since lift-and-shift","Cloud and on-prem environments managed as silos"], annual_it_budget:"$5.1M", employees:310 }, { id:15, company:"Waverly Health Partners", industry:"Healthcare", size:"1000-5000", location:"Nashville, TN", it_type:"On-Premise", contact_name:"Robert Kwan", contact_title:"SVP & CIO", contact_email:"r.kwan@waverlyhealth.com", contact_phone:"+1 (615) 555-1692", current_infra:"4 legacy data centers across 3 states, VMware-heavy (600+ VMs), planning cloud migration to Azure but no execution partner", pain_points:["Cloud migration planning complete but no execution partner","VMware to Azure lift-and-shift for 600+ VMs","HIPAA compliance must be maintained throughout migration"], annual_it_budget:"$18.2M", employees:2800 },
 ]; // // DATA — CES SOLUTION MAP (Gartner-aligned, buyer-ready pain mapping)
@@ -351,7 +456,7 @@ function updateSidebarStats() { document.getElementById('stat-total').textConten
 }
 function currentLeadId() { return parseInt(document.getElementById('script-lead-select').value);
 } // // NAVIGATION
-function showPage(page) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById('page-' + page).classList.add('active'); const idx = { discovery:0, script:1, tracker:2, api:3 }[page]; document.querySelectorAll('.nav-btn')[idx].classList.add('active'); if (page === 'script') renderScript(); if (page === 'tracker') renderTracker(); if (page === 'api') initApiPage();
+function showPage(page) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById('page-' + page).classList.add('active'); const idx = { discovery:0, script:1, tracker:2, api:3, admin:4 }[page]; document.querySelectorAll('.nav-btn')[idx].classList.add('active'); if (page === 'script') renderScript(); if (page === 'tracker') renderTracker(); if (page === 'api') initApiPage(); if (page === 'admin') renderAdmin();
 } function goToScript(leadId) { selectedLeadId = leadId; showPage('script'); }
 function goToTracker(leadId) { selectedLeadId = leadId; showPage('tracker'); setTimeout(() => { document.getElementById('log-lead').value = leadId; document.querySelector('.log-form').scrollIntoView({ behavior: 'smooth' }); }, 50);
 } // // LEAD DISCOVERY
