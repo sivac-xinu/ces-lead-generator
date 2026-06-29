@@ -916,9 +916,9 @@ function renderSolutionsPage() {
     const urgClass = s.urgency === 'critical' ? 'urgency-critical' : s.urgency === 'high' ? 'urgency-high' : 'urgency-medium';
     const keywordsHtml = (s.keywords || []).map(k => '<span style="font-size:10px;background:#dce8f5;color:#00356C;padding:2px 8px;border-radius:10px;font-weight:600;">' + k + '</span>').join('');
     const pitchHtml = s.pitch ? '<div style="font-size:12px;color:#333;line-height:1.6;margin-bottom:6px;">' + s.pitch + '</div>' : '';
-    const trendHtml = s.trend ? '<div style="font-size:11px;color:#005f8e;background:#e0f0fa;border-radius:4px;padding:4px 8px;margin-bottom:5px;line-height:1.4;">📈 ' + s.trend + '</div>' : '';
-    const buyHtml = s.buySignal ? '<div style="font-size:11px;color:#e65100;background:#fff3e0;border-radius:4px;padding:4px 8px;margin-bottom:5px;line-height:1.4;">🛒 ' + s.buySignal + '</div>' : '';
-    const statHtml = s.stat ? '<div style="font-size:11px;color:#2e7d32;font-weight:600;">📊 ' + s.stat + '</div>' : '';
+    const trendHtml = s.trend ? '<div style="font-size:11px;color:#005f8e;background:#e0f0fa;border-radius:4px;padding:4px 8px;margin-bottom:5px;line-height:1.4;">' + s.trend + '</div>' : '';
+    const buyHtml = s.buySignal ? '<div style="font-size:11px;color:#e65100;background:#fff3e0;border-radius:4px;padding:4px 8px;margin-bottom:5px;line-height:1.4;">' + s.buySignal + '</div>' : '';
+    const statHtml = s.stat ? '<div style="font-size:11px;color:#2e7d32;font-weight:600;">' + s.stat + '</div>' : '';
     const adminBtns = currentUserRole === 'admin'
       ? '<div style="margin-top:10px;display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="openSolutionModal(\'' + s.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSolution(\'' + s.id + '\',\'' + s.service.replace(/'/g, "\\'") + '\')">Delete</button></div>'
       : '';
