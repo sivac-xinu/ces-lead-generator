@@ -691,7 +691,8 @@ async function saveEditPainPoints() {
   if (!lead) return;
   const lines = (window._editPPList || []).map(s => s.trim()).filter(Boolean);
   if (!lines.length) { showToast('Add at least one pain point.'); return; }
-  await window._supabase.from('leads').update({ pain_points: lines }).eq('id', editPPLeadId);
+  const { error } = await supabase.from('leads').update({ pain_points: lines }).eq('id', editPPLeadId);
+  if (error) { showToast('Error saving pain points: ' + error.message); return; }
   lead.pain_points = lines;
   closeEditPainPoints();
   renderLeads();
