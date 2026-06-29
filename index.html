@@ -694,6 +694,7 @@ async function saveEditPainPoints() {
   const { error } = await supabase.from('leads').update({ pain_points: lines }).eq('id', editPPLeadId);
   if (error) { showToast('Error saving pain points: ' + error.message); return; }
   lead.pain_points = lines;
+  manuallyEditedLeads.add(lead.id);
   closeEditPainPoints();
   renderLeads();
   renderPPGlance();
@@ -784,17 +785,20 @@ function showToast(msg) { const el = document.getElementById('toast'); el.textCo
 
 
 // // INIT
+const manuallyEditedLeads = new Set();
 async function refreshAllPainPoints() {
   const btn = document.getElementById('refresh-pp-btn');
   btn.disabled = true;
   btn.textContent = 'Refreshing...';
   let updated = 0;
   for (const lead of allLeads) {
+    if (manuallyEditedLeads.has(lead.id)) continue;
     const title = lead.contact_title || '';
     const industry = lead.industry || '';
     const newPoints = inferPainPoints(title, industry);
     if (newPoints && newPoints.length) {
-      await window._supabase.from('leads').update({ pain_points: newPoints }).eq('id', lead.id);
+      const { error } = await supabase.from('leads').update({ pain_points: newPoints }).eq('id', lead.id);
+      if (error) { console.warn('Refresh PP error for', lead.id, error.message); continue; }
       lead.pain_points = newPoints;
       updated++;
     }
