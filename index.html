@@ -635,7 +635,7 @@ async function refreshUserRole() {
     }
   } catch(e) { /* ignore */ }
 }
-function showPage(page) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById('page-' + page).classList.add('active'); const idx = { discovery:0, script:1, solutions:2, tracker:3, api:4, admin:5 }[page]; document.querySelectorAll('.nav-btn')[idx].classList.add('active'); if (page === 'script') renderScript(); if (page === 'tracker') renderTracker(); if (page === 'api') initApiPage(); if (page === 'solutions') renderSolutionsPage(); if (page === 'admin') renderAdmin(); refreshUserRole(); }
+function showPage(page) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById('page-' + page).classList.add('active'); const idx = { discovery:0, script:1, tracker:2, solutions:3, api:4, admin:5 }[page]; document.querySelectorAll('.nav-btn')[idx].classList.add('active'); if (page === 'script') renderScript(); if (page === 'tracker') renderTracker(); if (page === 'api') initApiPage(); if (page === 'solutions') renderSolutionsPage(); if (page === 'admin') renderAdmin(); refreshUserRole(); }
 function goToScript(leadId) { selectedLeadId = leadId; showPage('script'); }
 function goToTracker(leadId) { selectedLeadId = leadId; showPage('tracker'); setTimeout(() => { document.getElementById('log-lead').value = leadId; document.querySelector('.log-form').scrollIntoView({ behavior: 'smooth' }); }, 50);
 } // // LEAD DISCOVERY
