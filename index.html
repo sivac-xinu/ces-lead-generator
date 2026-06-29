@@ -911,27 +911,32 @@ function renderSolutionsPage() {
   let filtered = solutions;
   if (q) filtered = filtered.filter(s => s.service.toLowerCase().includes(q) || (s.keywords || []).some(k => k.toLowerCase().includes(q)));
   if (uf) filtered = filtered.filter(s => s.urgency === uf);
-  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;">${filtered.map(s => {
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;">';
+  for (const s of filtered) {
     const urgClass = s.urgency === 'critical' ? 'urgency-critical' : s.urgency === 'high' ? 'urgency-high' : 'urgency-medium';
+    const keywordsHtml = (s.keywords || []).map(k => '<span style="font-size:10px;background:#dce8f5;color:#00356C;padding:2px 8px;border-radius:10px;font-weight:600;">' + k + '</span>').join('');
+    const pitchHtml = s.pitch ? '<div style="font-size:12px;color:#333;line-height:1.6;margin-bottom:6px;">' + s.pitch + '</div>' : '';
+    const trendHtml = s.trend ? '<div style="font-size:11px;color:#005f8e;background:#e0f0fa;border-radius:4px;padding:4px 8px;margin-bottom:5px;line-height:1.4;">📈 ' + s.trend + '</div>' : '';
+    const buyHtml = s.buySignal ? '<div style="font-size:11px;color:#e65100;background:#fff3e0;border-radius:4px;padding:4px 8px;margin-bottom:5px;line-height:1.4;">🛒 ' + s.buySignal + '</div>' : '';
+    const statHtml = s.stat ? '<div style="font-size:11px;color:#2e7d32;font-weight:600;">📊 ' + s.stat + '</div>' : '';
     const adminBtns = currentUserRole === 'admin'
-      ? `<div style="margin-top:10px;display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="openSolutionModal('${s.id}')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSolution('${s.id}','${s.service.replace(/'/g, "\\'")}')">Delete</button></div>`
+      ? '<div style="margin-top:10px;display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="openSolutionModal(\'' + s.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSolution(\'' + s.id + '\',\'' + s.service.replace(/'/g, "\\'") + '\')">Delete</button></div>'
       : '';
-    return `<div class="solution-card" style="flex-direction:column;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:22px;">${s.icon || '🔧'}</span>
-          <span style="font-size:14px;font-weight:800;color:#00356C;">${s.service}</span>
-        </div>
-        <span class="urgency-badge ${urgClass}">${s.urgency}</span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">${(s.keywords || []).map(k => `<span style="font-size:10px;background:#dce8f5;color:#00356C;padding:2px 8px;border-radius:10px;font-weight:600;">${k}</span>`).join('')}</div>
-      ${s.pitch ? `<div style="font-size:12px;color:#333;line-height:1.6;margin-bottom:6px;">${s.pitch}</div>` : ''}
-      ${s.trend ? `<div style="font-size:11px;color:#005f8e;background:#e0f0fa;border-radius:4px;padding:4px 8px;margin-bottom:5px;line-height:1.4;">📈 ${s.trend}</div>` : ''}
-      ${s.buySignal ? `<div style="font-size:11px;color:#e65100;background:#fff3e0;border-radius:4px;padding:4px 8px;margin-bottom:5px;line-height:1.4;">🛒 ${s.buySignal}</div>` : ''}
-      ${s.stat ? `<div style="font-size:11px;color:#2e7d32;font-weight:600;">📊 ${s.stat}</div>` : ''}
-      ${adminBtns}
-    </div>`;
-  }).join('')}</div>`;
+    html += '<div class="solution-card" style="flex-direction:column;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">'
+      + '<div style="display:flex;align-items:center;gap:8px;">'
+      + '<span style="font-size:22px;">' + (s.icon || '🔧') + '</span>'
+      + '<span style="font-size:14px;font-weight:800;color:#00356C;">' + s.service + '</span>'
+      + '</div>'
+      + '<span class="urgency-badge ' + urgClass + '">' + s.urgency + '</span>'
+      + '</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">' + keywordsHtml + '</div>'
+      + pitchHtml + trendHtml + buyHtml + statHtml
+      + adminBtns
+      + '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
 }
 function openSolutionModal(id) {
   editSolutionId = id || null;
