@@ -89,6 +89,16 @@
       <div class="form-group"><label>Confirm Password</label><input type="password" id="auth-confirm-pw" placeholder="Re-enter new password" autocomplete="new-password"/></div>
       <button class="btn btn-primary" id="btn-set-password">Update Password</button>
     </div>
+    <!-- Pending Approval -->
+    <div id="auth-panel-pending" class="auth-panel">
+      <div style="text-align:center;padding:20px 0;">
+        <div style="font-size:48px;margin-bottom:12px;">&#9203;</div>
+        <h2 style="font-size:20px;color:#00356C;margin-bottom:8px;">Approval Required</h2>
+        <p style="font-size:14px;color:#555;line-height:1.6;">Your account is pending approval.<br>An administrator will review and activate your access shortly.</p>
+        <p style="font-size:12px;color:#999;margin-top:16px;">Signed in as <strong id="pending-email"></strong></p>
+        <button class="btn btn-secondary" onclick="doSignout()" style="margin-top:12px;">Sign Out</button>
+      </div>
+    </div>
     <div class="auth-divider"></div>
     <div class="auth-footer-text">CES Limited &middot; Internal Tool</div>
   </div>
@@ -112,7 +122,7 @@
 </div> <!-- PAGE: CALL TRACKER -->
 <div id="page-tracker" class="page"> <h1>Call Tracker</h1> <p class="subtitle">Log your call outcomes, set follow-ups, and track your pipeline.</p> <div class="pipeline-row" id="pipeline-row"></div> <div id="followup-alert"></div> <div class="log-form"> <h3 style="margin-bottom:16px;"> Log a Call</h3> <div class="form-grid"> <div class="form-group"> <label>Lead</label> <select id="log-lead"></select> </div> <div class="form-group"> <label>Call Date</label> <input type="date" id="log-date"/> </div> <div class="form-group"> <label>Outcome</label> <select id="log-outcome"> <option>Prospect</option><option>Contacted</option><option>Voicemail</option> <option>Follow-up Scheduled</option><option>Qualified</option> <option>Not Interested</option><option>Closed Won</option> </select> </div> <div class="form-group"> <label>Follow-up Date (optional)</label> <input type="date" id="log-followup"/> </div> <div class="form-group" style="grid-column:1/-1;"> <label>Notes</label> <textarea id="log-notes" placeholder="What was discussed? Key objections? Next steps?"></textarea> </div> </div> <div style="margin-top:16px; display:flex; gap:10px;"> <button class="btn btn-primary" onclick="saveCall()">Save Call Log</button> <button class="btn btn-secondary" onclick="clearLogForm()">Clear</button> </div> </div> <div class="filter-bar" style="margin-bottom:16px;"> <div class="filter-group"> <label>Filter by Outcome</label> <select id="tracker-filter-outcome" onchange="renderCallLog()"> <option value="">All Outcomes</option> <option>Prospect</option><option>Contacted</option><option>Voicemail</option> <option>Follow-up Scheduled</option><option>Qualified</option> <option>Not Interested</option><option>Closed Won</option> </select> </div> <div class="filter-group"> <label>Search</label> <input type="text" id="tracker-search" placeholder="Company…" oninput="renderCallLog()" style="width:200px;"/> </div> <div class="filter-group"> <label>&nbsp;</label> <button class="btn btn-secondary btn-sm" onclick="exportCSV()">Export CSV</button> </div> </div> <div id="call-log-table"></div>
 </div> <!-- PAGE: ADMIN -->
-<div id="page-admin" class="page"> <h1>Admin</h1> <p class="subtitle">Manage user roles and access. Only the Super Admin can promote users to Admin.</p> <div style="background:#fff8e1;border-radius:8px;padding:12px 16px;font-size:12px;color:#6d4c00;margin-bottom:20px;"> <strong>Note:</strong> Users listed here signed up through the app and have an auto-created profile. If a user signed up but doesn't appear, have them sign in once to create their profile. </div> <div id="admin-user-list"></div>
+<div id="page-admin" class="page"> <h1>Admin</h1> <p class="subtitle">Manage user roles and access. Approve new signups and promote users to Admin.</p> <div style="background:#fff8e1;border-radius:8px;padding:12px 16px;font-size:12px;color:#6d4c00;margin-bottom:20px;"> <strong>Note:</strong> New signups appear under "Pending Approval" — approve them to grant access. Existing approved users can be promoted to Admin (only admins can manage roles). Bootstrap your first admin: run <code style="background:#fff0cc;padding:1px 6px;border-radius:4px;">UPDATE profiles SET role = 'admin', approved = true WHERE email = 'your@email.com';</code> in Supabase SQL Editor. </div> <div id="admin-user-list"></div>
 </div> </main>
 <div id="toast"></div>
 <script type="module">
@@ -125,11 +135,12 @@ window.__supabaseCreateClient = createClient;
 ║  Supabase Dashboard → SQL Editor before using admin features.   ║
 ╚══════════════════════════════════════════════════════════════════╝
 
--- 1. Create profiles table for role management
+-- 1. Create profiles table for role management + approval
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT,
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  approved BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -142,22 +153,28 @@ CREATE POLICY "profiles_select_admin"
   ON profiles FOR SELECT
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
--- 3. RLS: only admins can update profiles
+-- 3. RLS: only admins can update profiles (role + approved status)
 CREATE POLICY "profiles_update_admin"
   ON profiles FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'))
+  WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
 -- 4. RLS: only admins can insert profiles (for bootstrapping)
 CREATE POLICY "profiles_insert_admin"
   ON profiles FOR INSERT
   WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
--- 5. Auto-create profile on signup
+-- 4b. RLS: only admins can delete profiles (reject user)
+CREATE POLICY "profiles_delete_admin"
+  ON profiles FOR DELETE
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- 5. Auto-create profile on signup (runs as SECURITY DEFINER, bypasses RLS)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, role)
-  VALUES (NEW.id, NEW.email, 'user');
+  INSERT INTO public.profiles (id, email, role, approved)
+  VALUES (NEW.id, NEW.email, 'user', false);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -166,8 +183,8 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 6. After you sign up through the app, promote yourself to admin:
---    UPDATE profiles SET role = 'admin' WHERE email = 'your@email.com';
+-- 6. Bootstrap your admin account (run ONCE after creating your account):
+--    UPDATE profiles SET role = 'admin', approved = true WHERE email = 'your@email.com';
 
 -- 7. Also allow admins to insert profiles for existing auth users:
 --    DROP POLICY IF EXISTS "profiles_insert_admin" ON profiles;
@@ -244,23 +261,38 @@ async function doSignout() {
 }
 
 async function onAuthSuccess() {
+  // Fetch or create profile for role management
+  let approved = false;
+  try {
+    let { data: profile } = await supabase.from('profiles').select('role, approved').eq('id', currentUser.id).single();
+    if (!profile) {
+      await supabase.from('profiles').insert({ id: currentUser.id, email: currentUser.email, role: 'user', approved: false });
+      currentUserRole = 'user';
+      approved = false;
+    } else {
+      currentUserRole = profile.role;
+      approved = !!profile.approved;
+    }
+  } catch(e) {
+    currentUserRole = 'user';
+    approved = false;
+  }
+  // Admins bypass approval check
+  if (currentUserRole === 'admin') approved = true;
+  if (!approved) {
+    document.getElementById('auth-overlay').classList.remove('hidden');
+    document.getElementById('pending-email').textContent = currentUser.email;
+    document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('auth-panel-pending').classList.add('active');
+    hideAuthTabs();
+    document.getElementById('sidebar-user').style.display = 'none';
+    document.getElementById('main').style.display = 'none';
+    return;
+  }
   document.getElementById('auth-overlay').classList.add('hidden');
   document.getElementById('sidebar-user').style.display = 'flex';
   document.getElementById('user-email').textContent = currentUser.email;
   document.getElementById('main').style.display = 'flex';
-  // Fetch or create profile for role management
-  try {
-    let { data: profile } = await supabase.from('profiles').select('role').eq('id', currentUser.id).single();
-    if (!profile) {
-      // Existing user without a profile — insert one
-      await supabase.from('profiles').insert({ id: currentUser.id, email: currentUser.email, role: 'user' });
-      currentUserRole = 'user';
-    } else {
-      currentUserRole = profile.role;
-    }
-  } catch(e) {
-    currentUserRole = 'user';
-  }
   // Show admin nav button if admin
   if (currentUserRole === 'admin') {
     document.getElementById('nav-admin').style.display = '';
@@ -369,6 +401,25 @@ async function initAuth() {
 
 
 // ─── Admin ───────────────────────────────────────────────────────────────────
+async function approveUser(userId, email) {
+  if (currentUserRole !== 'admin') return;
+  try {
+    const { error } = await supabase.from('profiles').update({ approved: true }).eq('id', userId);
+    if (error) { showToast('Error: ' + error.message); return; }
+    showToast('Approved ' + email);
+    renderAdmin();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+async function rejectUser(userId, email) {
+  if (currentUserRole !== 'admin') return;
+  if (!confirm('Remove user ' + email + '? This will delete their profile (auth user remains).')) return;
+  try {
+    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+    if (error) { showToast('Error: ' + error.message); return; }
+    showToast('Rejected ' + email);
+    renderAdmin();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
 async function renderAdmin() {
   if (currentUserRole !== 'admin') { document.getElementById('page-admin').innerHTML = '<p style="color:#c62828;">Access denied.</p>'; return; }
   const el = document.getElementById('admin-user-list');
@@ -377,8 +428,23 @@ async function renderAdmin() {
     const { data, error } = await supabase.from('profiles').select('*').order('created_at');
     if (error) { el.innerHTML = '<p style="color:#c62828;">Error: ' + error.message + '</p>'; return; }
     if (!data || !data.length) { el.innerHTML = '<p>No users found.</p>'; return; }
-    let html = '<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f0f4f8;"><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Email</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Role</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Joined</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Actions</th></tr></thead><tbody>';
-    for (const user of data) {
+    const pending = data.filter(u => !u.approved);
+    const approved = data.filter(u => u.approved);
+    let html = '';
+    // Pending section
+    if (pending.length) {
+      html += '<h3 style="font-size:15px;color:#c62828;margin-bottom:12px;">Pending Approval (' + pending.length + ')</h3>';
+      html += '<table style="width:100%;border-collapse:collapse;margin-bottom:24px;"><thead><tr style="background:#fff4f4;"><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Email</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Signed Up</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Actions</th></tr></thead><tbody>';
+      for (const user of pending) {
+        const joined = user.created_at ? new Date(user.created_at).toLocaleDateString() : '—';
+        html += '<tr style="border-bottom:1px solid #e0e4f0;"><td style="padding:10px 12px;font-size:13px;">' + (user.email || '—') + '</td><td style="padding:10px 12px;font-size:12px;color:#888;">' + joined + '</td><td style="padding:10px 12px;"><button class="btn btn-primary btn-sm" onclick="approveUser(\'' + user.id + '\',\'' + user.email + '\')" style="margin-right:6px;">Approve</button><button class="btn btn-secondary btn-sm" onclick="rejectUser(\'' + user.id + '\',\'' + user.email + '\')">Reject</button></td></tr>';
+      }
+      html += '</tbody></table>';
+    }
+    // Approved users section
+    html += '<h3 style="font-size:15px;color:#00356C;margin-bottom:12px;">Approved Users (' + approved.length + ')</h3>';
+    html += '<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f0f4f8;"><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Email</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Role</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Joined</th><th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;color:#555;">Actions</th></tr></thead><tbody>';
+    for (const user of approved) {
       const isSelf = user.id === currentUser.id;
       const joined = user.created_at ? new Date(user.created_at).toLocaleDateString() : '—';
       html += '<tr style="border-bottom:1px solid #e0e4f0;"><td style="padding:10px 12px;font-size:13px;">' + (user.email || '—') + (isSelf ? ' <span style="font-size:11px;color:#888;">(you)</span>' : '') + '</td><td style="padding:10px 12px;font-size:13px;"><span style="display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;' + (user.role === 'admin' ? 'background:#e3f2fd;color:#00356C;' : 'background:#eee;color:#666;') + '">' + user.role + '</span></td><td style="padding:10px 12px;font-size:12px;color:#888;">' + joined + '</td><td style="padding:10px 12px;">' + (isSelf ? '<span style="font-size:11px;color:#aaa;">Cannot change own role</span>' : '<select onchange="changeUserRole(\'' + user.id + '\',this.value)" style="padding:5px 8px;border:1px solid #d0d8ee;border-radius:6px;font-size:12px;"><option value="user"' + (user.role === 'user' ? ' selected' : '') + '>User</option><option value="admin"' + (user.role === 'admin' ? ' selected' : '') + '>Admin</option></select>') + '</td></tr>';
