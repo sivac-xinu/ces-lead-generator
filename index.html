@@ -122,7 +122,7 @@
 </div> <!-- PAGE: CALL TRACKER -->
 <div id="page-tracker" class="page"> <h1>Call Tracker</h1> <p class="subtitle">Log your call outcomes, set follow-ups, and track your pipeline.</p> <div class="pipeline-row" id="pipeline-row"></div> <div id="followup-alert"></div> <div class="log-form"> <h3 style="margin-bottom:16px;"> Log a Call</h3> <div class="form-grid"> <div class="form-group"> <label>Lead</label> <select id="log-lead"></select> </div> <div class="form-group"> <label>Call Date</label> <input type="date" id="log-date"/> </div> <div class="form-group"> <label>Outcome</label> <select id="log-outcome"> <option>Prospect</option><option>Contacted</option><option>Voicemail</option> <option>Follow-up Scheduled</option><option>Qualified</option> <option>Not Interested</option><option>Closed Won</option> </select> </div> <div class="form-group"> <label>Follow-up Date (optional)</label> <input type="date" id="log-followup"/> </div> <div class="form-group" style="grid-column:1/-1;"> <label>Notes</label> <textarea id="log-notes" placeholder="What was discussed? Key objections? Next steps?"></textarea> </div> </div> <div style="margin-top:16px; display:flex; gap:10px;"> <button class="btn btn-primary" onclick="saveCall()">Save Call Log</button> <button class="btn btn-secondary" onclick="clearLogForm()">Clear</button> </div> </div> <div class="filter-bar" style="margin-bottom:16px;"> <div class="filter-group"> <label>Filter by Outcome</label> <select id="tracker-filter-outcome" onchange="renderCallLog()"> <option value="">All Outcomes</option> <option>Prospect</option><option>Contacted</option><option>Voicemail</option> <option>Follow-up Scheduled</option><option>Qualified</option> <option>Not Interested</option><option>Closed Won</option> </select> </div> <div class="filter-group"> <label>Search</label> <input type="text" id="tracker-search" placeholder="Company…" oninput="renderCallLog()" style="width:200px;"/> </div> <div class="filter-group"> <label>&nbsp;</label> <button class="btn btn-secondary btn-sm" onclick="exportCSV()">Export CSV</button> </div> </div> <div id="call-log-table"></div>
 </div> <!-- PAGE: ADMIN -->
-<div id="page-admin" class="page"> <h1>Admin</h1> <p class="subtitle">Manage user roles and access. Approve new signups and promote users to Admin.</p> <div style="background:#fff8e1;border-radius:8px;padding:12px 16px;font-size:12px;color:#6d4c00;margin-bottom:20px;"> <strong>Note:</strong> New signups appear under "Pending Approval" — approve them to grant access. Existing approved users can be promoted to Admin (only admins can manage roles). Bootstrap your first admin: run <code style="background:#fff0cc;padding:1px 6px;border-radius:4px;">UPDATE profiles SET role = 'admin', approved = true WHERE email = 'your@email.com';</code> in Supabase SQL Editor. </div> <div id="admin-user-list"></div>
+<div id="page-admin" class="page"> <h1>Admin</h1> <p class="subtitle">Manage user roles and access. Approve new signups and promote users to Admin.</p> <div style="background:#fff8e1;border-radius:8px;padding:12px 16px;font-size:12px;color:#6d4c00;margin-bottom:20px;"> <strong>Note:</strong> New signups appear under "Pending Approval" — approve them to grant access. Existing approved users can be promoted to Admin or deleted (only admins can manage roles). Bootstrap your first admin: run <code style="background:#fff0cc;padding:1px 6px;border-radius:4px;">UPDATE profiles SET role = 'admin', approved = true WHERE email = 'your@email.com';</code> in Supabase SQL Editor. </div> <div id="admin-user-list"></div>
 </div> </main>
 <div id="toast"></div>
 <script type="module">
@@ -148,7 +148,15 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 -- Add approved column if upgrading from older schema
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS approved BOOLEAN NOT NULL DEFAULT false;
 
--- 2. RLS policies (drop first so this SQL is safe to re-run)
+-- 2. Helper function (SECURITY DEFINER avoids infinite recursion in policies)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- 3. RLS policies (drop first so this SQL is safe to re-run)
 DROP POLICY IF EXISTS "profiles_select_own" ON profiles;
 CREATE POLICY "profiles_select_own"
   ON profiles FOR SELECT
@@ -157,25 +165,29 @@ CREATE POLICY "profiles_select_own"
 DROP POLICY IF EXISTS "profiles_select_admin" ON profiles;
 CREATE POLICY "profiles_select_admin"
   ON profiles FOR SELECT
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (public.is_admin());
 
 DROP POLICY IF EXISTS "profiles_update_admin" ON profiles;
 CREATE POLICY "profiles_update_admin"
   ON profiles FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'))
-  WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS "profiles_insert_admin" ON profiles;
 CREATE POLICY "profiles_insert_admin"
   ON profiles FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "profiles_insert_self" ON profiles;
+CREATE POLICY "profiles_insert_self"
+  ON profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
 
 DROP POLICY IF EXISTS "profiles_delete_admin" ON profiles;
 CREATE POLICY "profiles_delete_admin"
   ON profiles FOR DELETE
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (public.is_admin());
 
--- 3. Auto-create profile on signup (runs as SECURITY DEFINER, bypasses RLS)
+-- 4. Auto-create profile on signup (runs as SECURITY DEFINER, bypasses RLS)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -189,7 +201,7 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 4. Bootstrap your admin account (run ONCE after creating your account):
+-- 5. Bootstrap your admin account (run ONCE after creating your account):
 --    UPDATE profiles SET role = 'admin', approved = true WHERE email = 'your@email.com';
 -->
 <script>
@@ -449,7 +461,7 @@ async function renderAdmin() {
     for (const user of approved) {
       const isSelf = user.id === currentUser.id;
       const joined = user.created_at ? new Date(user.created_at).toLocaleDateString() : '—';
-      html += '<tr style="border-bottom:1px solid #e0e4f0;"><td style="padding:10px 12px;font-size:13px;">' + (user.email || '—') + (isSelf ? ' <span style="font-size:11px;color:#888;">(you)</span>' : '') + '</td><td style="padding:10px 12px;font-size:13px;"><span style="display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;' + (user.role === 'admin' ? 'background:#e3f2fd;color:#00356C;' : 'background:#eee;color:#666;') + '">' + user.role + '</span></td><td style="padding:10px 12px;font-size:12px;color:#888;">' + joined + '</td><td style="padding:10px 12px;">' + (isSelf ? '<span style="font-size:11px;color:#aaa;">Cannot change own role</span>' : '<select onchange="changeUserRole(\'' + user.id + '\',this.value)" style="padding:5px 8px;border:1px solid #d0d8ee;border-radius:6px;font-size:12px;"><option value="user"' + (user.role === 'user' ? ' selected' : '') + '>User</option><option value="admin"' + (user.role === 'admin' ? ' selected' : '') + '>Admin</option></select>') + '</td></tr>';
+      html += '<tr style="border-bottom:1px solid #e0e4f0;"><td style="padding:10px 12px;font-size:13px;">' + (user.email || '—') + (isSelf ? ' <span style="font-size:11px;color:#888;">(you)</span>' : '') + '</td><td style="padding:10px 12px;font-size:13px;"><span style="display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;' + (user.role === 'admin' ? 'background:#e3f2fd;color:#00356C;' : 'background:#eee;color:#666;') + '">' + user.role + '</span></td><td style="padding:10px 12px;font-size:12px;color:#888;">' + joined + '</td><td style="padding:10px 12px;">' + (isSelf ? '<span style="font-size:11px;color:#aaa;">Cannot change own role</span>' : '<select onchange="changeUserRole(\'' + user.id + '\',this.value)" style="padding:5px 8px;border:1px solid #d0d8ee;border-radius:6px;font-size:12px;"><option value="user"' + (user.role === 'user' ? ' selected' : '') + '>User</option><option value="admin"' + (user.role === 'admin' ? ' selected' : '') + '>Admin</option></select>') + (user.role !== 'admin' ? ' <button class="btn btn-secondary btn-sm" onclick="deleteUser(\'' + user.id + '\',\'' + user.email + '\')" style="margin-left:6px;background:#c62828;color:#fff;">Delete</button>' : '') + '</td></tr>';
     }
     html += '</tbody></table>';
     el.innerHTML = html;
@@ -463,6 +475,16 @@ async function changeUserRole(userId, newRole) {
     const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
     if (error) { showToast('Error: ' + error.message); return; }
     showToast('Role updated to ' + newRole);
+    renderAdmin();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+async function deleteUser(userId, email) {
+  if (currentUserRole !== 'admin') return;
+  if (!confirm('Delete user ' + email + '? This will permanently remove their access and profile. The auth account will remain but they won\'t be able to log in.')) return;
+  try {
+    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+    if (error) { showToast('Error: ' + error.message); return; }
+    showToast('Deleted ' + email);
     renderAdmin();
   } catch(e) { showToast('Error: ' + e.message); }
 }
