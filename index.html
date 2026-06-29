@@ -177,6 +177,7 @@ CREATE TRIGGER on_auth_user_created
 // Supabase initialization
 const SUPABASE_URL = 'https://vdptdfliacwgyidfeqlm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcHRkZmxpYWN3Z3lpZGZlcWxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDQ3MTIsImV4cCI6MjA5Nzk4MDcxMn0.30f9jP83-oMtH9pV68ELVmTNrj_MtuP--evNAhfGKbA';
+const APP_URL = 'https://sivac-xinu.github.io/ces-lead-generator/';
 
 // Capture hash before createClient() clears it
 const __hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -218,7 +219,7 @@ async function doSignup() {
   if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
   setAuthLoading('btn-signup', true);
   try {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password }, { redirectTo: APP_URL });
     setAuthLoading('btn-signup', false);
     if (error) { showAuthError(error.message); return; }
     if (data.session) {
@@ -303,8 +304,7 @@ async function doSendReset() {
   if (!email) { showAuthError('Please enter your email.'); return; }
   setAuthLoading('btn-send-reset', true);
   try {
-    const redirectTo = window.location.origin + window.location.pathname;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: APP_URL });
     setAuthLoading('btn-send-reset', false);
     if (error) { showAuthError(error.message); return; }
     showAuthSuccess('Password reset link sent! Check your email.');
