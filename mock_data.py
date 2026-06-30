@@ -21,6 +21,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "Enterprise Finance",
+        "tier": "Tier 1",
+        "created_by": "",
     },
     {
         "id": 2,
@@ -42,6 +45,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "Enterprise Healthcare",
+        "tier": "Tier 1",
+        "created_by": "",
     },
     {
         "id": 3,
@@ -63,6 +69,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "Mid-Market Logistics",
+        "tier": "Tier 2",
+        "created_by": "",
     },
     {
         "id": 4,
@@ -84,6 +93,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "Enterprise Manufacturing",
+        "tier": "Tier 2",
+        "created_by": "",
     },
     {
         "id": 5,
@@ -105,6 +117,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "Mid-Market Education",
+        "tier": "Tier 3",
+        "created_by": "",
     },
     {
         "id": 6,
@@ -126,6 +141,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "Enterprise Retail",
+        "tier": "Tier 1",
+        "created_by": "",
     },
     {
         "id": 7,
@@ -147,6 +165,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "SMB Legal",
+        "tier": "Tier 3",
+        "created_by": "",
     },
     {
         "id": 8,
@@ -168,6 +189,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "Enterprise Energy",
+        "tier": "Tier 1",
+        "created_by": "",
     },
     {
         "id": 9,
@@ -189,6 +213,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "SMB Technology",
+        "tier": "Tier 3",
+        "created_by": "",
     },
     {
         "id": 10,
@@ -210,6 +237,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "Mid-Market Real Estate",
+        "tier": "Tier 2",
+        "created_by": "",
     },
     {
         "id": 11,
@@ -231,6 +261,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "Enterprise Insurance",
+        "tier": "Tier 1",
+        "created_by": "",
     },
     {
         "id": 12,
@@ -252,6 +285,9 @@ LEADS = [
         "notes": "",
         "last_contacted": None,
         "follow_up": None,
+        "icp": "Mid-Market Biotech",
+        "tier": "Tier 2",
+        "created_by": "",
     },
 ]
 

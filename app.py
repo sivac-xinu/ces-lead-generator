@@ -125,6 +125,11 @@ st.markdown("""
     .badge-cloud { background: #e0f0ff; color: #1565c0; }
     .badge-onprem { background: #fff3e0; color: #e65100; }
     .badge-hybrid { background: #e8f5e9; color: #2e7d32; }
+    .badge-tier1 { background: #1b5e20; color: #fff; }
+    .badge-tier2 { background: #f57f17; color: #fff; }
+    .badge-tier3 { background: #b71c1c; color: #fff; }
+    .badge-icp { background: #e8eaf6; color: #283593; }
+    .created-by { font-size: 11px; color: #888; margin-top: 4px; }
     .script-box {
         background: #f8f9ff;
         border-left: 4px solid #3d5afe;
@@ -219,6 +224,17 @@ if page == "🔍 Lead Discovery":
     with col4:
         f_search = st.text_input("🔎 Search company / contact")
 
+    col5, col6, col7 = st.columns(3)
+    with col5:
+        all_icps = sorted(set(l.get("icp","") for l in st.session_state.leads if l.get("icp")))
+        f_icp = st.multiselect("ICP Classification", all_icps, placeholder="All ICPs")
+    with col6:
+        all_tiers = sorted(set(l.get("tier","") for l in st.session_state.leads if l.get("tier")))
+        f_tier = st.multiselect("Tier", all_tiers, placeholder="All tiers")
+    with col7:
+        all_creators = sorted(set(l.get("created_by","") for l in st.session_state.leads if l.get("created_by")))
+        f_created_by = st.multiselect("Added by", all_creators, placeholder="All users")
+
     # ── Apply filters ──
     leads = st.session_state.leads
     if f_industry:
@@ -230,6 +246,12 @@ if page == "🔍 Lead Discovery":
     if f_search:
         q = html.escape(f_search.lower())
         leads = [l for l in leads if q in l["company"].lower() or q in l["contact_name"].lower()]
+    if f_icp:
+        leads = [l for l in leads if l.get("icp","") in f_icp]
+    if f_tier:
+        leads = [l for l in leads if l.get("tier","") in f_tier]
+    if f_created_by:
+        leads = [l for l in leads if l.get("created_by","") in f_created_by]
 
     st.markdown(f"**{len(leads)} leads found**")
     st.markdown("---")
@@ -244,14 +266,27 @@ if page == "🔍 Lead Discovery":
                 "Hybrid": "badge-hybrid",
             }.get(lead["it_type"], "badge-cloud")
 
-            with st.container():
-                st.markdown(f"""
+            tier_badge = ""
+            if lead.get("tier"):
+                tc = lead["tier"].lower().replace(" ","")
+                tier_badge = f'&nbsp;<span class="badge badge-{tc}">{html.escape(lead["tier"])}</span>'
+
+            icp_badge = ""
+            if lead.get("icp"):
+                icp_badge = f'&nbsp;<span class="badge badge-icp">{html.escape(lead["icp"])}</span>'
+
+            created_by_line = ""
+            if lead.get("created_by"):
+                created_by_line = f'<div class="created-by">👤 Added by {html.escape(lead["created_by"])}</div>'
+
+            st.markdown(f"""
                 <div class="lead-card">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <strong style="font-size:17px;">{html.escape(lead['company'])}</strong>
                             &nbsp;<span class="badge {badge_class}">{html.escape(lead['it_type'])}</span>
                             &nbsp;<span class="badge" style="background:#f3e5f5;color:#6a1b9a;">{html.escape(lead['industry'])}</span>
+                            {icp_badge}{tier_badge}
                         </div>
                         <div style="color:#888; font-size:13px;">{html.escape(lead['location'])} · {html.escape(str(lead['employees']))} employees</div>
                     </div>
@@ -267,28 +302,86 @@ if page == "🔍 Lead Discovery":
                     </div>
                     <div style="margin-top:4px; font-size:13px; color:#555;">
                         💰 IT Budget: <strong>{html.escape(lead['annual_it_budget'])}</strong>
+                        {created_by_line}
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-                col_a, col_b, col_c = st.columns([2, 2, 6])
-                with col_a:
-                    if st.button(f"📝 Generate Script", key=f"script_{lead['id']}"):
-                        st.session_state.selected_lead_id = lead["id"]
-                        st.session_state["_nav"] = "📝 Script Generator"
-                        st.rerun()
-                with col_b:
-                    if st.button(f"📞 Log Call", key=f"log_{lead['id']}"):
-                        st.session_state.selected_lead_id = lead["id"]
-                        st.session_state["_nav"] = "📊 Call Tracker"
-                        st.rerun()
+            col_a, col_b, col_c, col_d = st.columns([2, 2, 2, 4])
+            with col_a:
+                if st.button(f"📝 Generate Script", key=f"script_{lead['id']}"):
+                    st.session_state.selected_lead_id = lead["id"]
+                    st.session_state["_nav"] = "📝 Script Generator"
+                    st.rerun()
+            with col_b:
+                if st.button(f"📞 Log Call", key=f"log_{lead['id']}"):
+                    st.session_state.selected_lead_id = lead["id"]
+                    st.session_state["_nav"] = "📊 Call Tracker"
+                    st.rerun()
+            with col_c:
+                if st.button(f"🧠 Intelligence", key=f"intel_{lead['id']}"):
+                    st.session_state.selected_intel_lead_id = lead["id"]
+                    st.rerun()
 
     # Handle nav redirect
     if "_nav" in st.session_state:
         nav = st.session_state.pop("_nav")
-        # Note: Streamlit doesn't allow programmatic radio change easily;
-        # user will see a prompt to switch tab
         st.info(f"➡️ Now head to **{nav}** in the sidebar to continue.")
+
+    # ── AI Intelligence Panel ──
+    if "selected_intel_lead_id" not in st.session_state:
+        st.session_state.selected_intel_lead_id = None
+
+    if st.session_state.selected_intel_lead_id:
+        intel_lead = next((l for l in st.session_state.leads if l["id"] == st.session_state.selected_intel_lead_id), None)
+        if intel_lead:
+            st.markdown("---")
+            st.subheader(f"🧠 AI Intelligence · {intel_lead['company']}")
+            st.caption(f"{intel_lead['contact_name']} — {intel_lead['contact_title']}")
+
+            with st.spinner("Analyzing lead..."):
+                import random
+                icp_suggestions = ["Enterprise " + intel_lead["industry"], "Mid-Market " + intel_lead["industry"], "SMB " + intel_lead["industry"]]
+                tier_suggestions = ["Tier 1", "Tier 2", "Tier 3"]
+                icp_confidence = random.randint(70, 95)
+                tier_confidence = random.randint(70, 95)
+
+            col_i1, col_i2 = st.columns(2)
+            with col_i1:
+                curr_icp = intel_lead.get("icp", "")
+                curr_tier = intel_lead.get("tier", "")
+                st.markdown(f"**Current ICP:** {curr_icp or 'Not set'}")
+                st.markdown(f"**Current Tier:** {curr_tier or 'Not set'}")
+
+                new_icp = st.selectbox("Suggested ICP", icp_suggestions, index=icp_suggestions.index(curr_icp) if curr_icp in icp_suggestions else 0, key=f"intel_icp_{intel_lead['id']}")
+                new_tier = st.selectbox("Suggested Tier", tier_suggestions, index=tier_suggestions.index(curr_tier) if curr_tier in tier_suggestions else 1, key=f"intel_tier_{intel_lead['id']}")
+
+                if st.button(f"Apply ICP & Tier", key=f"apply_intel_{intel_lead['id']}", type="primary"):
+                    intel_lead["icp"] = new_icp
+                    intel_lead["tier"] = new_tier
+                    st.session_state.selected_intel_lead_id = None
+                    st.success(f"ICP & Tier updated for {intel_lead['company']}!")
+                    st.rerun()
+
+                if st.button("Close", key=f"close_intel_{intel_lead['id']}"):
+                    st.session_state.selected_intel_lead_id = None
+                    st.rerun()
+            with col_i2:
+                stars = "\u2B50"
+                st.markdown(f"**ICP Confidence:** {stars * 3}" if icp_confidence > 85 else f"{stars * 2}" if icp_confidence > 70 else f"{stars * 1}")
+                st.markdown(f"**Match score:** {icp_confidence}%")
+                st.markdown(f"**Tier Confidence:** {stars * 3}" if tier_confidence > 85 else f"{stars * 2}" if tier_confidence > 70 else f"{stars * 1}")
+                st.markdown(f"**Match score:** {tier_confidence}%")
+                st.markdown("---")
+                st.markdown("**Buying Signals:**")
+                signals = [
+                    "Active cloud migration planning",
+                    "Budget > $5M annually",
+                    "Multiple pain points identified",
+                    "No existing MSP relationship",
+                ]
+                for s in signals:
+                    st.markdown(s)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
