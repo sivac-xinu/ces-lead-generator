@@ -130,7 +130,7 @@
 <div class="modal-overlay" id="edit-icp-modal" onclick="if(event.target===this)closeEditIcpTier()"> <div class="modal" style="width:460px;"> <div class="modal-header"> <h2>Edit ICP &amp; Tier</h2> <button class="btn btn-secondary btn-sm" onclick="closeEditIcpTier()">Cancel</button> </div> <div class="modal-body" style="padding:20px 24px;"> <p id="edit-icp-company" style="font-weight:700;color:#00356C;margin:0 0 16px;font-size:15px;"></p> <div class="form-group" style="margin-bottom:16px;"> <label>Ideal Customer Profile (ICP)</label> <select id="edit-icp-select" style="width:100%;padding:9px 12px;border:1.5px solid #aac4e0;border-radius:8px;font-size:14px;font-family:inherit;"> <option value="">Not set</option> <option>Enterprise Finance</option><option>Enterprise Healthcare</option><option>Enterprise Manufacturing</option><option>Enterprise Retail</option><option>Enterprise Energy</option><option>Enterprise Insurance</option><option>Enterprise Media</option><option>Enterprise Logistics</option><option>Mid-Market Finance</option><option>Mid-Market Logistics</option><option>Mid-Market Education</option><option>Mid-Market Real Estate</option><option>Mid-Market Biotech</option><option>Mid-Market Manufacturing</option><option>SMB Legal</option><option>SMB Technology</option><option>SMB Manufacturing</option><option>SMB Retail</option> </select> </div> <div class="form-group" style="margin-bottom:16px;"> <label>Tier</label> <select id="edit-tier-select" style="width:100%;padding:9px 12px;border:1.5px solid #aac4e0;border-radius:8px;font-size:14px;font-family:inherit;"> <option value="">Not set</option> <option>Tier 1</option><option>Tier 2</option><option>Tier 3</option> </select> </div> <p style="font-size:12px;color:#888;margin:0;">ICP = Ideal Customer Profile (segment + industry). Tier = priority (1 = highest). These help with lead qualification and filtering.</p> </div> <div class="modal-footer"> <button class="btn btn-secondary" onclick="closeEditIcpTier()">Cancel</button> <button class="btn btn-primary" onclick="saveEditIcpTier()">Save</button> </div> </div>
 </div>
 <!-- Intelligence Modal -->
-<div class="modal-overlay" id="intel-modal" onclick="if(event.target===this)this.classList.remove('open')"> <div class="modal" style="width:620px;"> <div class="modal-header"> <h2>Lead Intelligence</h2> <button class="btn btn-secondary btn-sm" onclick="document.getElementById('intel-modal').classList.remove('open')">Close</button> </div> <div class="modal-body" style="padding:20px 24px;"> <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"> <p id="intel-company" style="font-weight:700;color:#00356C;margin:0;font-size:16px;"></p> <span id="intel-engine" style="font-size:11px;background:#f0f4ff;color:#3949ab;padding:3px 10px;border-radius:20px;font-weight:600;">Local Rules</span> </div> <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;"> <div class="intel-card"> <div class="intel-label">Inferred ICP</div> <div class="intel-val" id="intel-icp">—</div> </div> <div class="intel-card"> <div class="intel-label">Inferred Tier</div> <div class="intel-val" id="intel-tier">—</div> </div> <div class="intel-card"> <div class="intel-label">Inferred IT Type</div> <div class="intel-val" id="intel-it">—</div> </div> <div class="intel-card"> <div class="intel-label">Research Depth</div> <div class="intel-val" id="intel-depth" style="font-size:13px;font-weight:500;">Quick</div> </div> </div> <div id="intel-enrichment" style="display:none;margin-bottom:18px;"> <div class="intel-card" style="background:#f0f7ff;border:1px solid #cce0ff;"> <div class="intel-label" style="color:#00356C;">Company Context</div> <div class="intel-val" id="intel-context" style="font-size:13px;line-height:1.5;color:#333;font-weight:400;">—</div> </div> <div class="intel-card" style="margin-top:10px;background:#fff8e1;border:1px solid #ffe082;"> <div class="intel-label" style="color:#6d4c00;">Key Challenges</div> <div class="intel-val" id="intel-challenges" style="font-size:13px;line-height:1.5;color:#333;font-weight:400;">—</div> </div> <div class="intel-card" style="margin-top:10px;background:#e8f5e9;border:1px solid #a5d6a7;"> <div class="intel-label" style="color:#1b5e20;">Recommended CES Approach</div> <div class="intel-val" id="intel-approach" style="font-size:13px;line-height:1.5;color:#333;font-weight:400;">—</div> </div> </div> <div class="intel-card" style="margin-bottom:18px;"> <div class="intel-label">Inferred Pain Points <span id="intel-pp-count" style="font-weight:400;color:#aaa;"></span></div> <div class="intel-val" id="intel-pp" style="font-size:13px;line-height:1.6;color:#333;">—</div> </div> <div style="display:flex;gap:10px;"> <button class="btn btn-primary" id="intel-apply-all">Apply All to Lead</button> <button class="btn btn-secondary btn-sm" id="intel-apply-pp">Apply Pain Points Only</button> </div> <p style="font-size:12px;color:#888;margin-top:12px;">Powered by <span style="font-weight:600;" id="intel-engine-msg">local rules</span>. Configure engine via the <strong>AI Engine</strong> button in the sidebar.</p> </div> <div class="modal-footer"> <button class="btn btn-secondary" onclick="document.getElementById('intel-modal').classList.remove('open')">Close</button> </div> </div>
+<div class="modal-overlay" id="intel-modal" onclick="if(event.target===this)this.classList.remove('open')"> <div class="modal" style="width:640px;"> <div class="modal-header"> <h2>Lead Intelligence</h2> <button class="btn btn-secondary btn-sm" onclick="document.getElementById('intel-modal').classList.remove('open')">Close</button> </div> <div class="modal-body" style="padding:20px 24px;"> <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"> <p id="intel-company" style="font-weight:700;color:#00356C;margin:0;font-size:16px;"></p> <span id="intel-engine" style="font-size:11px;background:#f0f4ff;color:#3949ab;padding:3px 10px;border-radius:20px;font-weight:600;">Local Rules</span> </div> <div id="intel-icp-options" style="margin-bottom:18px;"> <div class="intel-label" style="margin-bottom:8px;">ICP Suggestions <span style="font-weight:400;color:#aaa;font-size:12px;">— click to select, apply below</span></div> <div id="intel-icp-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div> </div> <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;"> <div class="intel-card"> <div class="intel-label">Selected ICP</div> <div class="intel-val" id="intel-icp-selected">—</div> </div> <div class="intel-card"> <div class="intel-label">Inferred Tier</div> <div class="intel-val" id="intel-tier">—</div> </div> <div class="intel-card"> <div class="intel-label">Inferred IT Type</div> <div class="intel-val" id="intel-it">—</div> </div> <div class="intel-card"> <div class="intel-label">Research Depth</div> <div class="intel-val" id="intel-depth" style="font-size:13px;font-weight:500;">Quick</div> </div> </div> <div id="intel-enrichment" style="display:none;margin-bottom:18px;"> <div class="intel-card" style="background:#f0f7ff;border:1px solid #cce0ff;"> <div class="intel-label" style="color:#00356C;">Company Context</div> <div class="intel-val" id="intel-context" style="font-size:13px;line-height:1.5;color:#333;font-weight:400;">—</div> </div> <div class="intel-card" style="margin-top:10px;background:#fff8e1;border:1px solid #ffe082;"> <div class="intel-label" style="color:#6d4c00;">Key Challenges</div> <div class="intel-val" id="intel-challenges" style="font-size:13px;line-height:1.5;color:#333;font-weight:400;">—</div> </div> <div class="intel-card" style="margin-top:10px;background:#e8f5e9;border:1px solid #a5d6a7;"> <div class="intel-label" style="color:#1b5e20;">Recommended CES Approach</div> <div class="intel-val" id="intel-approach" style="font-size:13px;line-height:1.5;color:#333;font-weight:400;">—</div> </div> </div> <div class="intel-card" style="margin-bottom:18px;"> <div class="intel-label">Inferred Pain Points <span id="intel-pp-count" style="font-weight:400;color:#aaa;"></span></div> <div class="intel-val" id="intel-pp" style="font-size:13px;line-height:1.6;color:#333;">—</div> </div> <div style="display:flex;gap:10px;"> <button class="btn btn-primary" id="intel-apply-all" onclick="applyIntelAll()">Apply All to Lead</button> <button class="btn btn-secondary btn-sm" id="intel-apply-pp" onclick="applyIntelPP()">Apply Pain Points Only</button> </div> <p style="font-size:12px;color:#888;margin-top:12px;">Powered by <span style="font-weight:600;" id="intel-engine-msg">local rules</span>. Configure engine via the <strong>AI Engine</strong> button in the sidebar.</p> </div> <div class="modal-footer"> <button class="btn btn-secondary" onclick="closeIntelModal()">Close</button> </div> </div>
 </div>
 <!-- AI Settings Modal -->
 <div class="modal-overlay" id="ai-settings-modal" onclick="if(event.target===this)closeAiSettings()"> <div class="modal" style="width:460px;"> <div class="modal-header"> <h2>AI Engine Settings</h2> <button class="btn btn-secondary btn-sm" onclick="closeAiSettings()">Close</button> </div> <div class="modal-body" style="padding:20px 24px;"> <p style="font-size:13px;color:#555;margin-bottom:16px;">Configure the AI engine that powers lead intelligence (ICP, tier, pain points). When configured, the Intelligence button uses AI instead of local rules.</p> <div class="form-group" style="margin-bottom:16px;"> <label>Provider</label> <select id="ai-provider" style="width:100%;padding:9px 12px;border:1.5px solid #aac4e0;border-radius:8px;font-size:14px;font-family:inherit;"> <option value="local">Local Rules (no API key needed)</option> <option value="openrouter">OpenRouter AI</option> </select> </div> <div class="form-group" style="margin-bottom:16px;" id="ai-key-group"> <label>API Key <span style="font-weight:400;color:#aaa;">(stored locally, never sent to CES)</span></label> <input type="password" id="ai-key" placeholder="sk-or-v1-..." style="width:100%;padding:9px 12px;border:1.5px solid #aac4e0;border-radius:8px;font-size:14px;font-family:inherit;"/> </div> <div class="form-group" style="margin-bottom:16px;"> <label>Model <span style="font-weight:400;color:#aaa;">(free models: gemma-2-9b-it, llama-3.2-3b-instruct)</span></label> <input type="text" id="ai-model" placeholder="google/gemma-2-9b-it:free" style="width:100%;padding:9px 12px;border:1.5px solid #aac4e0;border-radius:8px;font-size:14px;font-family:inherit;"/> </div> <div class="form-group" style="margin-bottom:16px;"> <label>Research Depth <span style="font-weight:400;color:#aaa;">(deeper = more web context &amp; processed pain points)</span></label> <select id="ai-depth" style="width:100%;padding:9px 12px;border:1.5px solid #aac4e0;border-radius:8px;font-size:14px;font-family:inherit;"> <option value="quick">Quick — standard inference</option> <option value="deep">Deep — enriched context &amp; processed pain points</option> </select> </div> <p style="font-size:12px;color:#888;margin:0;">Get a free API key at <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--accent);">openrouter.ai/keys</a>. Your key and model choice are saved in your browser only.</p> </div> <div class="modal-footer"> <button class="btn btn-secondary" onclick="closeAiSettings()">Cancel</button> <button class="btn btn-primary" onclick="saveAiSettings()">Save Settings</button> </div> </div>
@@ -746,17 +746,28 @@ async function aiAnalyze(lead) {
         body: JSON.stringify({ model: aiConfig.model, messages: [
           { role:'system', content: isDeep
             ? 'You are a senior B2B IT research analyst. Return JSON only with:\n' +
-              '  "icp": string (e.g. "Enterprise Healthcare"),\n' +
+              '  "icp_options": array of 2-3 objects, each with:\n' +
+              '    "value": string (e.g. "Enterprise Healthcare"),\n' +
+              '    "confidence": "high"/"medium"/"low",\n' +
+              '    "reasoning": "1-sentence why this fits"\n' +
               '  "tier": "Tier 1"/"Tier 2"/"Tier 3",\n' +
               '  "it_type": "Cloud"/"On-Premise"/"Hybrid",\n' +
-              '  "pain_points": array of 6-8 specific, processed pain points (cite context from company data),\n' +
+              '  "pain_points": array of 6-8 specific, processed pain points,\n' +
               '  "enrichment": {\n' +
-              '    "company_context": "2-3 sentence summary of their IT profile based on industry/size/budget",\n' +
-              '    "key_challenges": "3-4 bullet-style specific challenges they likely face",\n' +
+              '    "company_context": "2-3 sentence summary of their IT profile",\n' +
+              '    "key_challenges": "3-4 bullet-style specific challenges",\n' +
               '    "recommended_approach": "2-3 sentence CES outreach angle"\n' +
               '  }\n' +
-              'Use industry, company size, job title, budget, location and infrastructure to infer. Make pain points specific and actionable, not generic.'
-            : 'You are a B2B IT lead analyst. Return a JSON object with: icp (string like "Enterprise Healthcare"), tier ("Tier 1"/"Tier 2"/"Tier 3"), it_type ("Cloud"/"On-Premise"/"Hybrid"), pain_points (array of 3-5 strings). Use industry, company size, job title, budget and current infrastructure to infer.' },
+              'Use industry, company size, job title, budget, location and infrastructure to infer ICP variations.'
+            : 'You are a B2B IT lead analyst. Return JSON only with:\n' +
+              '  "icp_options": array of 2-3 objects, each with:\n' +
+              '    "value": string (e.g. "Enterprise Healthcare"),\n' +
+              '    "confidence": "high"/"medium"/"low",\n' +
+              '    "reasoning": "1-sentence why this fits"\n' +
+              '  "tier": "Tier 1"/"Tier 2"/"Tier 3",\n' +
+              '  "it_type": "Cloud"/"On-Premise"/"Hybrid",\n' +
+              '  "pain_points": array of 3-5 strings.\n' +
+              'Use industry, company size, job title, budget and current infrastructure.' },
           { role:'user', content: JSON.stringify({ company:lead.company, industry:lead.industry, employees:lead.employees, title:lead.contact_title, budget:lead.annual_it_budget, infra:lead.current_infra, location:lead.location }) }
         ], temperature: isDeep ? 0.4 : 0.3, max_tokens: isDeep ? 800 : 500 })
       });
@@ -769,10 +780,47 @@ async function aiAnalyze(lead) {
   }
   return null;
 }
+let intelResult = null; let intelLeadId = null; let intelSelectedIcp = null;
+
+function closeIntelModal() { document.getElementById('intel-modal').classList.remove('open'); intelResult = null; intelLeadId = null; intelSelectedIcp = null; }
+
+function selectIntelICP(value) {
+  intelSelectedIcp = value;
+  document.getElementById('intel-icp-selected').textContent = value;
+  document.querySelectorAll('.icp-option').forEach(el => {
+    el.style.borderColor = el.dataset.value === value ? '#F99D1C' : '#dde3f0';
+    el.style.background = el.dataset.value === value ? '#FFF4DC' : '#fafbff';
+  });
+}
+
+function renderICPOptions(options) {
+  const container = document.getElementById('intel-icp-list');
+  if (!options || !options.length) {
+    container.innerHTML = '<span style="color:#888;font-size:13px;">No ICP options available</span>';
+    return;
+  }
+  container.innerHTML = options.map((o, i) => `
+    <div class="icp-option" data-value="${o.value}" onclick="selectIntelICP('${o.value}')"
+         style="padding:10px 14px;border:2px solid ${i===0?'#F99D1C':'#dde3f0'};border-radius:10px;cursor:pointer;
+                background:${i===0?'#FFF4DC':'#fafbff'};transition:all 0.15s;min-width:160px;flex:1;">
+      <div style="font-weight:700;font-size:14px;color:#00356C;">${o.value}</div>
+      <div style="font-size:11px;color:#888;margin-top:2px;">
+        <span style="display:inline-block;padding:1px 8px;border-radius:10px;font-weight:600;
+                     background:${o.confidence==='high'?'#e8f5e9':o.confidence==='medium'?'#fff8e1':'#f5f5f5'};
+                     color:${o.confidence==='high'?'#1b5e20':o.confidence==='medium'?'#e65100':'#616161'};">
+          ${o.confidence||'medium'}
+        </span>
+      </div>
+      <div style="font-size:12px;color:#555;margin-top:4px;line-height:1.4;">${o.reasoning||''}</div>
+    </div>`).join('');
+  selectIntelICP(options[0].value);
+}
+
 async function runIntelligence(leadId) {
   const lead = allLeads.find(l => l.id === leadId);
   if (!lead) return;
   const isDeep = aiConfig.depth === 'deep';
+  intelLeadId = leadId; intelResult = null; intelSelectedIcp = null;
   const modal = document.getElementById('intel-modal');
   document.getElementById('intel-company').textContent = `${lead.company} — ${lead.contact_name}`;
   document.getElementById('intel-engine').textContent = aiConfig.provider === 'openrouter' ? 'OpenRouter AI' : 'Local Rules';
@@ -787,15 +835,21 @@ async function runIntelligence(leadId) {
     if (isDeep) {
       result = deepInferAll(lead);
     } else {
+      const icp = inferICP(lead.industry, lead.employees);
       result = {
-        icp: inferICP(lead.industry, lead.employees),
+        icp_options: [
+          { value: icp, confidence: 'high', reasoning: `Based on ${lead.employees||'unknown'} employees in ${lead.industry||'unknown'} industry` },
+          { value: icp.startsWith('Enterprise') ? icp.replace('Enterprise','Mid-Market') : icp.startsWith('Mid-Market') ? icp.replace('Mid-Market','Enterprise') : icp.replace('SMB','Mid-Market'), confidence: 'medium', reasoning: 'Alternate segment based on possible different revenue/scope interpretation' },
+          { value: icp.startsWith('SMB') ? 'Enterprise '+icp.split(' ').slice(1).join(' ') : 'SMB '+icp.split(' ').slice(1).join(' '), confidence: 'low', reasoning: 'Boundary case — less likely but possible given partial data' }
+        ],
         tier: inferTier(lead.industry, lead.employees, lead.annual_it_budget),
         it_type: inferITType(lead.industry),
         pain_points: inferPainPoints(lead.contact_title, lead.industry)
       };
     }
   }
-  document.getElementById('intel-icp').textContent = result.icp;
+  intelResult = result;
+  renderICPOptions(result.icp_options || [{value:result.icp||'—',confidence:'medium',reasoning:'Inferred from available data'}]);
   document.getElementById('intel-tier').textContent = result.tier;
   document.getElementById('intel-it').textContent = result.it_type;
   const pts = result.pain_points || [];
@@ -807,18 +861,25 @@ async function runIntelligence(leadId) {
     document.getElementById('intel-approach').textContent = result.enrichment.recommended_approach || '—';
     document.getElementById('intel-enrichment').style.display = 'block';
   }
-  btn.onclick = async () => {
-    lead.icp = result.icp; lead.tier = result.tier; lead.it_type = result.it_type; lead.pain_points = result.pain_points;
-    await supabase.from('leads').update({ icp:result.icp, tier:result.tier, it_type:result.it_type, pain_points:result.pain_points }).eq('id', leadId);
-    modal.classList.remove('open'); renderLeads(); showToast(`Intelligence applied to ${lead.company}`);
-  };
-  document.getElementById('intel-apply-pp').onclick = async () => {
-    lead.pain_points = result.pain_points;
-    await supabase.from('leads').update({ pain_points: result.pain_points }).eq('id', leadId);
-    modal.classList.remove('open'); renderLeads(); showToast('Pain points updated');
-  };
   modal.classList.add('open');
 }
+
+async function applyIntelAll() {
+  const lead = allLeads.find(l => l.id === intelLeadId);
+  if (!lead || !intelResult) return;
+  const icp = intelSelectedIcp || intelResult.icp || (intelResult.icp_options&&intelResult.icp_options[0]&&intelResult.icp_options[0].value) || '';
+  lead.icp = icp; lead.tier = intelResult.tier; lead.it_type = intelResult.it_type; lead.pain_points = intelResult.pain_points;
+  await supabase.from('leads').update({ icp, tier:intelResult.tier, it_type:intelResult.it_type, pain_points:intelResult.pain_points }).eq('id', intelLeadId);
+  closeIntelModal(); renderLeads(); showToast(`Intelligence applied to ${lead.company}`);
+}
+async function applyIntelPP() {
+  const lead = allLeads.find(l => l.id === intelLeadId);
+  if (!lead || !intelResult) return;
+  lead.pain_points = intelResult.pain_points;
+  await supabase.from('leads').update({ pain_points: intelResult.pain_points }).eq('id', intelLeadId);
+  closeIntelModal(); renderLeads(); showToast('Pain points updated');
+}
+
 function deepInferAll(lead) {
   const emp = lead.employees || 0;
   const ind = (lead.industry || '').toLowerCase();
@@ -830,6 +891,11 @@ function deepInferAll(lead) {
   const isMidMarket = emp >= 200;
   const segment = isEnterprise ? 'Enterprise' : isMidMarket ? 'Mid-Market' : 'SMB';
   const icp = `${segment} ${lead.industry || 'Other'}`;
+  const icp_options = [
+    { value: icp, confidence: 'high', reasoning: `${segment} segment based on ${emp.toLocaleString()} employees in ${lead.industry||'unknown'} industry` },
+    { value: isEnterprise ? `Mid-Market ${lead.industry||'Other'}` : `Enterprise ${lead.industry||'Other'}`, confidence: 'medium', reasoning: isEnterprise ? 'Could be Mid-Market if employee count is inflated or includes contractors' : 'Could be Enterprise if revenue or scope is larger than headcount suggests' },
+    { value: isMidMarket && !isEnterprise ? `SMB ${lead.industry||'Other'}` : `Enterprise ${lead.industry||'Other'}`, confidence: 'low', reasoning: 'Boundary case based on partial data — verify with actual revenue or budget figures' }
+  ];
   const tier = emp > 2000 || budgetNum > 10 ? 'Tier 1' : emp > 200 || budgetNum > 3 ? 'Tier 2' : 'Tier 3';
   const itType = inferITType(lead.industry);
   const basePoints = inferPainPoints(lead.contact_title, lead.industry);
@@ -858,7 +924,7 @@ function deepInferAll(lead) {
     ]).join('\n'),
     recommended_approach: `Position CES as a ${isEnterprise?'strategic partner who helps enterprises accelerate AI-ready infrastructure modernisation at scale':'trusted advisor who helps mid-market organisations build enterprise-grade IT operations without enterprise overhead'}. Lead with pain points around ${allPoints.slice(0,2).map(p=>p.split('—')[0]||p).join(' and ').toLowerCase()}. Reference relevant industry trends and offer a no-obligation infrastructure assessment.`
   };
-  return { icp, tier, it_type: itType, pain_points: allPoints.slice(0,8), enrichment: enriched };
+  return { icp_options, tier, it_type: itType, pain_points: allPoints.slice(0,8), enrichment: enriched };
 }
 function openAiSettings() { const m=document.getElementById('ai-settings-modal'); document.getElementById('ai-provider').value=aiConfig.provider; document.getElementById('ai-key').value=aiConfig.apiKey; document.getElementById('ai-model').value=aiConfig.model; document.getElementById('ai-depth').value=aiConfig.depth||'quick'; m.classList.add('open'); }
 function closeAiSettings() { document.getElementById('ai-settings-modal').classList.remove('open'); }
