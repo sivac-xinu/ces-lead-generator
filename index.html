@@ -891,10 +891,11 @@ function deepInferAll(lead) {
   const isMidMarket = emp >= 200;
   const segment = isEnterprise ? 'Enterprise' : isMidMarket ? 'Mid-Market' : 'SMB';
   const icp = `${segment} ${lead.industry || 'Other'}`;
+  const icpInd = lead.industry || 'Other';
   const icp_options = [
-    { value: icp, confidence: 'high', reasoning: `${segment} segment based on ${emp.toLocaleString()} employees in ${lead.industry||'unknown'} industry` },
-    { value: isEnterprise ? `Mid-Market ${lead.industry||'Other'}` : `Enterprise ${lead.industry||'Other'}`, confidence: 'medium', reasoning: isEnterprise ? 'Could be Mid-Market if employee count is inflated or includes contractors' : 'Could be Enterprise if revenue or scope is larger than headcount suggests' },
-    { value: isMidMarket && !isEnterprise ? `SMB ${lead.industry||'Other'}` : `Enterprise ${lead.industry||'Other'}`, confidence: 'low', reasoning: 'Boundary case based on partial data — verify with actual revenue or budget figures' }
+    { value: `${segment} ${icpInd}`, confidence: 'high', reasoning: `${segment} segment based on ${emp.toLocaleString()} employees in ${lead.industry||'unknown'} industry` },
+    { value: isEnterprise ? `Mid-Market ${icpInd}` : `Enterprise ${icpInd}`, confidence: 'medium', reasoning: isEnterprise ? 'Could be Mid-Market if employee count is inflated or includes contractors' : 'Could be Enterprise if revenue or scope is larger than headcount suggests' },
+    { value: isEnterprise ? `SMB ${icpInd}` : isMidMarket ? `SMB ${icpInd}` : `Mid-Market ${icpInd}`, confidence: 'low', reasoning: 'Boundary case based on partial data — verify with actual revenue or budget figures' }
   ];
   const tier = emp > 2000 || budgetNum > 10 ? 'Tier 1' : emp > 200 || budgetNum > 3 ? 'Tier 2' : 'Tier 3';
   const itType = inferITType(lead.industry);
