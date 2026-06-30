@@ -182,6 +182,7 @@ with st.sidebar:
         "Navigate",
         ["🔍 Lead Discovery", "📝 Script Generator", "📊 Call Tracker"],
         label_visibility="collapsed",
+        key="nav_page",
     )
     st.markdown("---")
 
@@ -311,22 +312,17 @@ if page == "🔍 Lead Discovery":
             with col_a:
                 if st.button(f"📝 Generate Script", key=f"script_{lead['id']}"):
                     st.session_state.selected_lead_id = lead["id"]
-                    st.session_state["_nav"] = "📝 Script Generator"
+                    st.session_state["nav_page"] = "📝 Script Generator"
                     st.rerun()
             with col_b:
                 if st.button(f"📞 Log Call", key=f"log_{lead['id']}"):
                     st.session_state.selected_lead_id = lead["id"]
-                    st.session_state["_nav"] = "📊 Call Tracker"
+                    st.session_state["nav_page"] = "📊 Call Tracker"
                     st.rerun()
             with col_c:
                 if st.button(f"🧠 Intelligence", key=f"intel_{lead['id']}"):
                     st.session_state.selected_intel_lead_id = lead["id"]
                     st.rerun()
-
-    # Handle nav redirect
-    if "_nav" in st.session_state:
-        nav = st.session_state.pop("_nav")
-        st.info(f"➡️ Now head to **{nav}** in the sidebar to continue.")
 
     # ── AI Intelligence Panel ──
     if "selected_intel_lead_id" not in st.session_state:
