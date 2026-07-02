@@ -1,14 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 window.__supabaseCreateClient = createClient;
 
-import { LEADS } from "./data/leads.js";
 import { SEED_SOLUTIONS } from "./data/solutions.js";
 import { TONES } from "./data/tones.js";
 import { OBJECTIONS } from "./data/objections.js";
-import { INFER_RULES, INFER_INDUSTRY, FIELD_SYNONYMS, CES_FIELDS } from "./data/inference.js";
+import { INFER_RULES, INFER_INDUSTRY, FIELD_SYNONYMS, CES_FIELDS, PP_THEMES } from "./data/inference.js";
 
 // Expose as globals for legacy code (inline onclick, etc.)
-window.LEADS = LEADS;
 window.SEED_SOLUTIONS = SEED_SOLUTIONS;
 window.TONES = TONES;
 window.OBJECTIONS = OBJECTIONS;
@@ -1203,14 +1201,7 @@ window.initApp = async function() {
     window._dbg('fetching leads...'); const { data: dbLeads, error: leadsErr } = await supabase.from('leads').select('*').order('created_at'); window._dbg('leads result: ' + (leadsErr ? 'ERR:'+JSON.stringify(leadsErr) : (dbLeads ? dbLeads.length + ' rows' : 'null')));
     if (leadsErr) throw leadsErr;
 
-    if (!dbLeads || dbLeads.length === 0) {
-      const seedRows = LEADS.map(l => leadToDbRow(l));
-      const { data: seeded, error: seedErr } = await supabase.from('leads').insert(seedRows).select();
-      if (seedErr) throw seedErr;
-      allLeads = (seeded || []).map(dbRowToLead);
-    } else {
-      allLeads = dbLeads.map(dbRowToLead);
-    }
+    allLeads = (dbLeads || []).map(dbRowToLead);
 
     const { data: dbLogs, error: logsErr } = await supabase.from('call_logs').select('*').order('created_at');
     if (logsErr) throw logsErr;
