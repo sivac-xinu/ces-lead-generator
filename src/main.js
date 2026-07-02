@@ -46,7 +46,12 @@ function dispatchAction(action, event, el) {
         const args = JSON.parse('[' + argStr + ']');
         return window[fnName](...args);
       } catch {
-        return window[fnName](argStr.replace(/^['"]|['"]$/g, ''));
+        const args = argStr.split(',').map(s => {
+          s = s.trim();
+          if (s === 'event') return event;
+          return s.replace(/^['"]|['"]$/g, '');
+        });
+        return window[fnName](...args);
       }
     }
   }
@@ -1153,14 +1158,19 @@ window.copyApolloCommand = copyApolloCommand;
 window.copyScript = copyScript;
 window.copySnovCommand = copySnovCommand;
 window.currentLeadId = currentLeadId;
+window.debouncedClearbit = debouncedClearbit;
 window.doSignout = doSignout;
 window.downloadScript = downloadScript;
 window.exportCSV = exportCSV;
 window.goToTracker = goToTracker;
+window.handleDrop = handleDrop;
+window.handleFileSelect = handleFileSelect;
 window.importAllApolloResults = importAllApolloResults;
 window.importAllHunterResults = importAllHunterResults;
 window.importModalBack = importModalBack;
 window.importModalNext = importModalNext;
+window.markApiKeyDirty = markApiKeyDirty;
+window.addTag = addTag;
 window.openAiSettings = openAiSettings;
 window.openImportModal = openImportModal;
 window.openPainPointsGlance = openPainPointsGlance;
@@ -1169,6 +1179,11 @@ window.parseApolloJson = parseApolloJson;
 window.parseSnovJson = parseSnovJson;
 window.reInferPainPoints = reInferPainPoints;
 window.refreshAllPainPoints = refreshAllPainPoints;
+window.renderCallLog = renderCallLog;
+window.renderLeads = renderLeads;
+window.renderPPGlance = renderPPGlance;
+window.renderScript = renderScript;
+window.renderSolutionsPage = renderSolutionsPage;
 window.runApolloSearch = runApolloSearch;
 window.runHunterSearch = runHunterSearch;
 window.runSnovSearch = runSnovSearch;

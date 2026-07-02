@@ -24,7 +24,12 @@ function dispatchAction(action, event, el) {
         const args = JSON.parse('[' + argStr + ']');
         return window[fnName](...args);
       } catch {
-        return window[fnName](argStr.replace(/^['"]|['"]$/g, ''));
+        const args = argStr.split(',').map(s => {
+          s = s.trim();
+          if (s === 'event') return event;
+          return s.replace(/^['"]|['"]$/g, '');
+        });
+        return window[fnName](...args);
       }
     }
   }
@@ -463,6 +468,7 @@ window.renderHunterResults = renderHunterResults;
 window.renderLeads = renderLeads;
 window.renderPPChips = renderPPChips;
 window.renderPPGlance = renderPPGlance;
+window.renderScript = renderScript;
 window.renderPipeline = renderPipeline;
 window.renderSnovResults = renderSnovResults;
 window.renderTracker = renderTracker;
@@ -480,6 +486,7 @@ window.toggleObjections = toggleObjections;
 window.updateApiKeyStatuses = updateApiKeyStatuses;
 window.updateMappingSample = updateMappingSample;
 window.addPainPointChip = addPainPointChip;
+window.addTag = addTag;
 window.closeEditPainPoints = closeEditPainPoints;
 window.currentLeadId = currentLeadId;
 window.goToTracker = goToTracker;
