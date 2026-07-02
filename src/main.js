@@ -35,6 +35,74 @@ function escapeJsStr(str) {
   if (str == null) return '';
   return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
+
+// ─── Event delegation ─────────────────────────────────────────────────────────
+function dispatchAction(action, event, el) {
+  if (!action) return;
+  const match = action.match(/^(\w+)\(([^)]*)\)$/);
+  if (match) {
+    const fnName = match[1], argStr = match[2].trim();
+    if (typeof window[fnName] === 'function') {
+      if (!argStr) return window[fnName]();
+      try {
+        const args = JSON.parse('[' + argStr + ']');
+        return window[fnName](...args);
+      } catch {
+        return window[fnName](argStr.replace(/^['"]|['"]$/g, ''));
+      }
+    }
+  }
+  if (action.startsWith('if(event.target===this)')) {
+    if (e.target === el) {
+      const fnName = action.slice('if(event.target===this)'.length);
+      if (typeof window[fnName] === 'function') window[fnName]();
+    }
+    return;
+  }
+  if (action === 'triggerFileInput') return document.getElementById('csv-file-input').click();
+  if (action === 'focusApolloTitles') return document.getElementById('apollo-titles-input').focus();
+  if (action === 'closeIntelModalDirect') return document.getElementById('intel-modal').classList.remove('open');
+  if (action === 'toggleIntelResearch') {
+    const n = document.getElementById('intel-research-body');
+    if (n) n.style.display = n.style.display === 'none' ? 'block' : 'none';
+    return;
+  }
+  if (action === 'closeOverlayOnBackdrop') {
+    if (event.target === el) el.classList.remove('open');
+    return;
+  }
+}
+function setupDelegation() {
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-click]');
+    if (el) dispatchAction(el.dataset.click, e, el);
+  });
+  document.addEventListener('change', e => {
+    const el = e.target.closest('[data-change]');
+    if (el) dispatchAction(el.dataset.change, e, el);
+  });
+  document.addEventListener('input', e => {
+    const el = e.target.closest('[data-input]');
+    if (el) dispatchAction(el.dataset.input, e, el);
+  });
+  document.addEventListener('keydown', e => {
+    const el = e.target.closest('[data-keydown]');
+    if (el) dispatchAction(el.dataset.keydown, e, el);
+  });
+  document.addEventListener('dragover', e => {
+    const el = e.target.closest('[data-dragover]');
+    if (el) { e.preventDefault(); dispatchAction(el.dataset.dragover, e, el); }
+  });
+  document.addEventListener('dragleave', e => {
+    const el = e.target.closest('[data-dragleave]');
+    if (el) dispatchAction(el.dataset.dragleave, e, el);
+  });
+  document.addEventListener('drop', e => {
+    const el = e.target.closest('[data-drop]');
+    if (el) { e.preventDefault(); dispatchAction(el.dataset.drop, e, el); }
+  });
+}
+
 let _authCooldown = 0;
 function checkAuthCooldown() {
   const now = Date.now();
@@ -854,7 +922,7 @@ async function saveEditIcpTier() {
   showToast(`ICP/Tier saved for ${lead.company}`);
 }
 // End Edit Pain Points // // TONE SELECTOR
-function initToneSelector() { const container = document.getElementById('tone-selector'); container.innerHTML = Object.entries(TONES).map(([key, t]) => ` <label class="tone-opt"> <input type="radio" name="tone" value="${key}" ${key === activeTone ? 'checked' : ''} onchange="activeTone='${key}'; renderScript()"/> <div class="tone-card"> ${t.icon ? `<span class="tone-icon">${t.icon}</span>` : ``} <div class="tone-name">${t.label}</div> <div class="tone-desc">${t.desc}</div> </div> </label> `).join('');
+function initToneSelector() { const container = document.getElementById('tone-selector'); container.innerHTML = Object.entries(TONES).map(([key, t]) => ` <label class="tone-opt"> <input type="radio" name="tone" value="${key}" ${key === activeTone ? 'checked' : ''}/> <div class="tone-card"> ${t.icon ? `<span class="tone-icon">${t.icon}</span>` : ``} <div class="tone-name">${t.label}</div> <div class="tone-desc">${t.desc}</div> </div> </label> `).join('');
 } // // SCRIPT GENERATOR
 function initScriptSelect() { const sel = document.getElementById('script-lead-select'); sel.innerHTML = allLeads.map(l => `<option value="${l.id}">${escapeHtml(l.company)} — ${escapeHtml(l.contact_name)}${l.imported ? ' ' : ''}</option>`).join('');
 } function refreshScriptSelect() { const sel = document.getElementById('script-lead-select'); const cur = sel.value; sel.innerHTML = allLeads.map(l => `<option value="${l.id}">${escapeHtml(l.company)} — ${escapeHtml(l.contact_name)}${l.imported ? ' ' : ''}</option>`).join(''); if (cur) sel.value = cur;
@@ -1119,6 +1187,7 @@ window.toggleKeyVisibility = toggleKeyVisibility;
 window.toggleObjections = toggleObjections;
 
 window.initApp = async function() {
+  setupDelegation();
   window._supabase = supabase;
   window._dbg = (msg) => {
     const bar = document.getElementById('debug-bar');

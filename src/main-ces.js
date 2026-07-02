@@ -12,6 +12,80 @@ function escapeJsStr(str) {
   return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
+// ─── Event delegation ─────────────────────────────────────────────────────────
+function dispatchAction(action, event, el) {
+  if (!action) return;
+  const match = action.match(/^(\w+)\(([^)]*)\)$/);
+  if (match) {
+    const fnName = match[1], argStr = match[2].trim();
+    if (typeof window[fnName] === 'function') {
+      if (!argStr) return window[fnName]();
+      try {
+        const args = JSON.parse('[' + argStr + ']');
+        return window[fnName](...args);
+      } catch {
+        return window[fnName](argStr.replace(/^['"]|['"]$/g, ''));
+      }
+    }
+  }
+  if (action.startsWith('if(event.target===this)')) {
+    if (event.target === el) {
+      const fnName = action.slice('if(event.target===this)'.length);
+      if (typeof window[fnName] === 'function') window[fnName]();
+    }
+    return;
+  }
+  if (action === 'triggerFileInput') return document.getElementById('csv-file-input').click();
+  if (action === 'focusApolloTitles') return document.getElementById('apollo-titles-input').focus();
+  if (action === 'closeIntelModalDirect') return document.getElementById('intel-modal').classList.remove('open');
+  if (action === 'toggleIntelResearch') {
+    const n = document.getElementById('intel-research-body');
+    if (n) n.style.display = n.style.display === 'none' ? 'block' : 'none';
+    return;
+  }
+  if (action === 'closeOverlayOnBackdrop') {
+    if (event.target === el) el.classList.remove('open');
+    return;
+  }
+}
+function setupDelegation() {
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-click]');
+    if (el) dispatchAction(el.dataset.click, e, el);
+  });
+  document.addEventListener('change', e => {
+    const el = e.target.closest('[data-change]');
+    if (el) dispatchAction(el.dataset.change, e, el);
+  });
+  document.addEventListener('input', e => {
+    const el = e.target.closest('[data-input]');
+    if (el) dispatchAction(el.dataset.input, e, el);
+  });
+  document.addEventListener('keydown', e => {
+    const el = e.target.closest('[data-keydown]');
+    if (el) dispatchAction(el.dataset.keydown, e, el);
+  });
+  document.addEventListener('dragover', e => {
+    const el = e.target.closest('[data-dragover]');
+    if (el) { e.preventDefault(); dispatchAction(el.dataset.dragover, e, el); }
+  });
+  document.addEventListener('dragleave', e => {
+    const el = e.target.closest('[data-dragleave]');
+    if (el) dispatchAction(el.dataset.dragleave, e, el);
+  });
+  document.addEventListener('drop', e => {
+    const el = e.target.closest('[data-drop]');
+    if (el) { e.preventDefault(); dispatchAction(el.dataset.drop, e, el); }
+  });
+  // Tone radio buttons (dynamically injected)
+  document.addEventListener('change', e => {
+    if (e.target.matches('#tone-selector input[name="tone"]')) {
+      activeTone = e.target.value;
+      renderScript();
+    }
+  });
+}
+
 // // DATA — MOCK LEADS (used for seeding on first run)
 const LEADS = [ { id:1, company:"Meridian Financial Group", industry:"Finance", size:"500-1000", location:"New York, NY", it_type:"Hybrid", contact_name:"James Thornton", contact_title:"CTO", contact_email:"j.thornton@meridianfg.com", contact_phone:"+1 (212) 555-0147", current_infra:"On-prem servers aging out, partial Azure migration", pain_points:["Legacy hardware maintenance costs — cloud migration overdue","DR/backup gaps with no cloud failover","Compliance (SOX) must carry through cloud migration"], annual_it_budget:"$4.2M", employees:720 }, { id:2, company:"Crestview Healthcare Systems",industry:"Healthcare", size:"1000-5000", location:"Chicago, IL", it_type:"On-Premise", contact_name:"Dr. Sandra Koh", contact_title:"VP of IT", contact_email:"s.koh@crestviewhealth.org", contact_phone:"+1 (312) 555-0283", current_infra:"Aging VMware environment, no cloud footprint", pain_points:["HIPAA compliance burden","Uptime requirements (99.99%)","EHR system latency"], annual_it_budget:"$11.5M", employees:2400 }, { id:3, company:"Pinnacle Logistics Co.", industry:"Logistics", size:"200-500", location:"Dallas, TX", it_type:"Cloud", contact_name:"Marcus Ellis", contact_title:"IT Director", contact_email:"m.ellis@pinnaclelogistics.com", contact_phone:"+1 (469) 555-0391", current_infra:"AWS-heavy, single cloud, no MSP relationship", pain_points:["Cloud cost overruns","No 24/7 support","Security posture gaps — unpatched vulnerabilities across AWS workloads"], annual_it_budget:"$1.8M", employees:340 }, { id:4, company:"Redwood Manufacturing Inc.", industry:"Manufacturing", size:"500-1000", location:"Detroit, MI", it_type:"On-Premise", contact_name:"Linda Vasquez", contact_title:"Head of Infrastructure", contact_email:"l.vasquez@redwoodmfg.com", contact_phone:"+1 (313) 555-0512", current_infra:"Physical servers, no virtualization, running EOL Windows Server 2012", pain_points:["EOL OS risk — Windows Server 2012 no longer receiving security patches","Cloud migration needed but no roadmap","OT/IT convergence challenges — no vulnerability scanning on plant floor systems"], annual_it_budget:"$2.9M", employees:870 }, { id:5, company:"Atlas Education Group", industry:"Education", size:"200-500", location:"Boston, MA", it_type:"Cloud", contact_name:"Tom Nguyen", contact_title:"CIO", contact_email:"t.nguyen@atlasedu.org", contact_phone:"+1 (617) 555-0678", current_infra:"Google Workspace + Azure AD, no unified security layer", pain_points:["Student data privacy (FERPA)","Ransomware exposure","Budget constraints"], annual_it_budget:"$900K", employees:280 }, { id:6, company:"Summit Retail Partners", industry:"Retail", size:"1000-5000", location:"Atlanta, GA", it_type:"Hybrid", contact_name:"Rachel Moore", contact_title:"VP Technology", contact_email:"r.moore@summitretail.com", contact_phone:"+1 (404) 555-0734", current_infra:"Mixed AWS + on-prem POS systems, 80 locations", pain_points:["PCI-DSS compliance across locations","Network latency at stores","Centralized IT visibility"], annual_it_budget:"$8.3M", employees:3100 }, { id:7, company:"Keystone Legal LLP", industry:"Legal", size:"100-200", location:"San Francisco, CA", it_type:"On-Premise", contact_name:"David Park", contact_title:"IT Manager", contact_email:"d.park@keystonelegal.com", contact_phone:"+1 (415) 555-0845", current_infra:"Local file servers, no cloud backup, single IT staff", pain_points:["Data loss risk","No IT redundancy","Client confidentiality compliance"], annual_it_budget:"$450K", employees:130 }, { id:8, company:"Orion Energy Solutions", industry:"Energy", size:"500-1000", location:"Houston, TX", it_type:"Hybrid", contact_name:"Brian Cole", contact_title:"CTO", contact_email:"b.cole@orionenergy.com", contact_phone:"+1 (713) 555-0962", current_infra:"Azure + on-prem SCADA systems, minimal cybersecurity stack", pain_points:["OT security gaps","Regulatory compliance (NERC CIP)","Cloud expansion needs"], annual_it_budget:"$5.7M", employees:610 }, { id:9, company:"Bright Minds EdTech", industry:"Technology", size:"50-200", location:"Austin, TX", it_type:"Cloud", contact_name:"Priya Shah", contact_title:"Head of Engineering", contact_email:"p.shah@brightminds.io", contact_phone:"+1 (512) 555-1023", current_infra:"Multi-cloud (AWS + GCP), fast-growing, no managed security", pain_points:["Scaling infrastructure quickly","DevSecOps gaps","Cost visibility across clouds"], annual_it_budget:"$700K", employees:95 }, { id:10, company:"National Property Trust", industry:"Real Estate", size:"200-500", location:"Phoenix, AZ", it_type:"Hybrid", contact_name:"Kevin Walsh", contact_title:"Director of IT", contact_email:"k.walsh@nationalproperty.com", contact_phone:"+1 (602) 555-1134", current_infra:"Microsoft 365 + aging on-prem, no MDM solution", pain_points:["Remote workforce security","No endpoint management","Vendor sprawl"], annual_it_budget:"$1.2M", employees:260 }, { id:11, company:"Vantage Insurance Group", industry:"Insurance", size:"1000-5000", location:"Hartford, CT", it_type:"On-Premise", contact_name:"Angela Torres", contact_title:"SVP Information Technology",contact_email:"a.torres@vantageinsurance.com", contact_phone:"+1 (860) 555-1247", current_infra:"Legacy mainframe + Windows servers, cloud strategy in evaluation", pain_points:["Mainframe migration to cloud — complexity and risk","VMware licensing shock post-Broadcom acquisition","Cyber insurance requiring documented cloud migration roadmap"], annual_it_budget:"$14.2M", employees:1800 }, { id:12, company:"Clearwater Biotech", industry:"Biotech", size:"200-500", location:"San Diego, CA", it_type:"Cloud", contact_name:"Dr. Nina Petrov", contact_title:"VP IT & Data", contact_email:"n.petrov@clearwaterbio.com", contact_phone:"+1 (858) 555-1358", current_infra:"AWS HPC clusters for R&D, minimal enterprise IT", pain_points:["FDA 21 CFR Part 11 compliance","Data integrity for trials","IT/Research alignment"], annual_it_budget:"$3.1M", employees:320 }, { id:13, company:"Trident Media Group", industry:"Media & Entertainment", size:"500-1000", location:"Los Angeles, CA", it_type:"On-Premise", contact_name:"Carlos Reyes", contact_title:"VP of Technology", contact_email:"c.reyes@tridentmedia.com", contact_phone:"+1 (213) 555-1470", current_infra:"On-prem data center (2 racks), 3-year lease expiring Q3 2025, VMware vSphere 6.7 running 80 VMs", pain_points:["Data center lease expiring — forced migration decision","VMware licensing costs tripled post-Broadcom","No cloud migration roadmap or internal expertise"], annual_it_budget:"$3.8M", employees:680 }, { id:14, company:"Garrison Capital Partners", industry:"Finance", size:"200-500", location:"Chicago, IL", it_type:"Hybrid", contact_name:"Michelle Grant", contact_title:"CTO", contact_email:"m.grant@garrisoncap.com", contact_phone:"+1 (312) 555-1581", current_infra:"Primary workloads on aging on-prem (EOL Dell PowerEdge), partial Azure migration stalled mid-way, no cloud governance", pain_points:["Stalled cloud migration — 40% of workloads still on-prem","Azure costs uncontrolled since lift-and-shift","Cloud and on-prem environments managed as silos"], annual_it_budget:"$5.1M", employees:310 }, { id:15, company:"Waverly Health Partners", industry:"Healthcare", size:"1000-5000", location:"Nashville, TN", it_type:"On-Premise", contact_name:"Robert Kwan", contact_title:"SVP & CIO", contact_email:"r.kwan@waverlyhealth.com", contact_phone:"+1 (615) 555-1692", current_infra:"4 legacy data centers across 3 states, VMware-heavy (600+ VMs), planning cloud migration to Azure but no execution partner", pain_points:["Cloud migration planning complete but no execution partner","VMware to Azure lift-and-shift for 600+ VMs","HIPAA compliance must be maintained throughout migration"], annual_it_budget:"$18.2M", employees:2800 },
 ]; // // DATA — CES SOLUTION MAP (Gartner-aligned, buyer-ready pain mapping)
@@ -225,7 +299,7 @@ function reInferPainPoints() {
   showToast('Re-inferred from title & industry');
 }
 // End Edit Pain Points // // TONE SELECTOR
-function initToneSelector() { const container = document.getElementById('tone-selector'); container.innerHTML = Object.entries(TONES).map(([key, t]) => ` <label class="tone-opt"> <input type="radio" name="tone" value="${key}" ${key === activeTone ? 'checked' : ''} onchange="activeTone='${key}'; renderScript()"/> <div class="tone-card"> ${t.icon ? `<span class="tone-icon">${t.icon}</span>` : ``} <div class="tone-name">${t.label}</div> <div class="tone-desc">${t.desc}</div> </div> </label> `).join('');
+function initToneSelector() { const container = document.getElementById('tone-selector'); container.innerHTML = Object.entries(TONES).map(([key, t]) => ` <label class="tone-opt"> <input type="radio" name="tone" value="${key}" ${key === activeTone ? 'checked' : ''}/> <div class="tone-card"> ${t.icon ? `<span class="tone-icon">${t.icon}</span>` : ``} <div class="tone-name">${t.label}</div> <div class="tone-desc">${t.desc}</div> </div> </label> `).join('');
 } // // SCRIPT GENERATOR
 function initScriptSelect() { const sel = document.getElementById('script-lead-select'); sel.innerHTML = allLeads.map(l => `<option value="${l.id}">${escapeHtml(l.company)} — ${escapeHtml(l.contact_name)}${l.imported ? ' ' : ''}</option>`).join('');
 } function refreshScriptSelect() { const sel = document.getElementById('script-lead-select'); const cur = sel.value; sel.innerHTML = allLeads.map(l => `<option value="${l.id}">${escapeHtml(l.company)} — ${escapeHtml(l.contact_name)}${l.imported ? ' ' : ''}</option>`).join(''); if (cur) sel.value = cur;
@@ -417,6 +491,7 @@ window.showPage = showPage;
 
 (async function init() {
   try {
+    setupDelegation();
     window._supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   } catch(e) {
     document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#c62828;"><h2>Supabase failed to load</h2><p>Check your internet connection and reload.</p><pre>' + escapeHtml(e.message) + '</pre></div>';
