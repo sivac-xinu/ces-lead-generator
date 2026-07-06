@@ -56,7 +56,7 @@ function dispatchAction(action, event, el) {
     }
   }
   if (action.startsWith('if(event.target===this)')) {
-    if (e.target === el) {
+    if (event.target === el) {
       const fnName = action.slice('if(event.target===this)'.length);
       if (typeof window[fnName] === 'function') window[fnName]();
     }
