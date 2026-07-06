@@ -8,6 +8,7 @@ Modern React + TypeScript rebuild of the CES Lead Generator. Lives in a sibling 
 - Remote branch: `v2` on `https://github.com/sivac-xinu/ces-lead-generator.git`
 - GitHub Pages source must be set to **GitHub Actions** (not a branch/folder) for `deploy.yml` to publish.
 - Deployment triggers on every push to the `v2` branch.
+- If the first deploy fails, confirm Pages source is **GitHub Actions**, then push any commit to re-trigger.
 
 ## Tech Stack
 - **Framework:** React 19 + TypeScript
