@@ -15,13 +15,20 @@ export function CESLogo({ width = 120, className }: CESLogoProps) {
       className={className}
       aria-label="CES logo"
     >
-      <path
-        d="M20 4C12 4 7 8 5 14L2 52C1 60 6 66 14 66L100 68C108 68 114 64 116 56L118 16C119 8 114 3 106 3L20 4Z"
-        fill="#00356C"
-      />
+      <g transform="translate(60,35) rotate(-5) translate(-60,-35)">
+        <rect
+          x="8"
+          y="5"
+          width="104"
+          height="60"
+          rx="14"
+          ry="14"
+          fill="#00356C"
+        />
+      </g>
       <text
-        x="62"
-        y="45"
+        x="60"
+        y="46"
         textAnchor="middle"
         fontFamily="Arial, Helvetica, sans-serif"
         fontWeight="800"
