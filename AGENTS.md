@@ -1,7 +1,13 @@
 # CES Lead Generator v2 — Agent Notes
 
 ## Project Overview
-Modern React + TypeScript rebuild of the CES Lead Generator. Lives in a sibling directory so the original app and Supabase database remain untouched.
+Modern React + TypeScript rebuild of the CES Lead Generator. Lives in a sibling directory locally and is pushed to the `v2` branch of the existing GitHub repository so the original app and Supabase database remain untouched.
+
+## Branch & Deployment
+- Local path: `/Users/staray/Documents/Projects/CES_Internal_Projects/Infra_Lead_Generator_v2/`
+- Remote branch: `v2` on `https://github.com/sivac-xinu/ces-lead-generator.git`
+- GitHub Pages source must be set to **GitHub Actions** (not a branch/folder) for `deploy.yml` to publish.
+- Deployment triggers on every push to the `v2` branch.
 
 ## Tech Stack
 - **Framework:** React 19 + TypeScript
