@@ -1,35 +1,37 @@
 interface CESLogoProps {
   width?: number
-  light?: boolean
   className?: string
 }
 
-export function CESLogo({ width = 120, light = true, className }: CESLogoProps) {
-  const height = (width / 120) * 42
-  const textColor = light ? '#ffffff' : '#00356C'
+export function CESLogo({ width = 120, className }: CESLogoProps) {
+  const height = (width / 120) * 70
 
   return (
     <svg
       width={width}
       height={height}
-      viewBox="0 0 120 42"
+      viewBox="0 0 120 70"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-label="CES logo"
     >
-      <rect x="0" y="0" width="5" height="42" rx="2.5" fill="#F99D1C" />
+      <path
+        d="M20 4C12 4 7 8 5 14L2 52C1 60 6 66 14 66L100 68C108 68 114 64 116 56L118 16C119 8 114 3 106 3L20 4Z"
+        fill="#00356C"
+      />
       <text
-        x="16"
-        y="31"
-        fontFamily="Satoshi, 'Segoe UI', system-ui, sans-serif"
+        x="62"
+        y="45"
+        textAnchor="middle"
+        fontFamily="Arial, Helvetica, sans-serif"
         fontWeight="800"
-        fontSize="32"
-        letterSpacing="-0.5"
-        fill={textColor}
+        fontSize="34"
+        letterSpacing="-1"
+        fill="#ffffff"
       >
         CES
       </text>
-      <circle cx="111" cy="27" r="4.5" fill="#F99D1C" />
+      <rect x="47" y="51" width="20" height="5" rx="1" fill="#F99D1C" />
     </svg>
   )
 }

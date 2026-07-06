@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { cn } from '@/utils/cn'
 import { Toast } from '@/components/ui/Toast'
+import { CESLogo } from '@/components/ui/CESLogo'
 import { BarChart3, Briefcase, LayoutDashboard, LogOut, Phone, Settings, Shield, Users, Zap, BookOpen } from 'lucide-react'
 
 const navItems = [
@@ -23,8 +24,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden bg-ces-bg">
       <aside className="flex w-56 min-w-56 flex-col bg-ces-navy text-white">
         <div className="border-b border-white/10 p-4">
-          <div className="text-xl font-bold">CES</div>
-          <div className="text-xs text-white/60">IT Infrastructure · Lead Generator</div>
+          <CESLogo width={80} />
+          <div className="mt-2 text-xs text-white/60">IT Infrastructure · Lead Generator</div>
         </div>
 
         <nav className="flex-1 space-y-1 p-3">

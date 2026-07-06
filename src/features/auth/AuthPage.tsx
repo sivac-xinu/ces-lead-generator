@@ -36,7 +36,7 @@ export function AuthPage() {
 
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl backdrop-blur">
         <div className="mb-6 flex flex-col items-center">
-          <CESLogo width={96} light={false} />
+          <CESLogo width={96} />
           <h1 className="mt-4 text-center text-2xl font-bold text-ces-navy">CES Lead Generator</h1>
           <p className="mt-1 text-center text-sm text-ces-muted">Sign in to access your leads</p>
         </div>
