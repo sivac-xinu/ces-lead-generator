@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sidebar-bg: #00356C;
+  --accent: #F99D1C;
+  --accent-light: #FFF4DC;
+  --card-bg: #fafbff;
+  --card-border: #dde3f0;
+  --text: #1a1a2e;
+  --text-muted: #555;
+  --bg: #f0f4f8;
+  --ces-navy: #00356C;
+  --ces-orange: #F99D1C;
+}
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  body {
+    @apply m-0 bg-ces-bg text-ces-text antialiased;
+    font-family: 'Satoshi', 'Segoe UI', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-ces-navy font-semibold;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ces-orange focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-primary {
+    @apply btn bg-ces-orange text-white hover:bg-orange-600;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white text-ces-navy border border-ces-border hover:bg-slate-50;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-ces-muted hover:bg-slate-100;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-ces-border bg-white px-3 py-2 text-sm text-ces-text placeholder:text-gray-400 focus:border-ces-orange focus:outline-none focus:ring-1 focus:ring-ces-orange;
+  }
+
+  .select {
+    @apply input appearance-none;
+  }
+
+  .label {
+    @apply mb-1 block text-xs font-medium text-ces-muted;
+  }
+
+  .card {
+    @apply rounded-xl border border-ces-border bg-ces-card p-4 shadow-sm;
+  }
+}
