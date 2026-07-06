@@ -17,6 +17,10 @@ vi.mock('@/features/auth/AuthProvider', () => ({
   useAuth: () => authMock,
 }))
 
+vi.mock('@/hooks/useProfiles', () => ({
+  useProfiles: () => ({ data: [], isLoading: false }),
+}))
+
 vi.mock('papaparse', () => ({
   parse: vi.fn(),
 }))

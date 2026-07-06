@@ -2,10 +2,12 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { cn } from '@/utils/cn'
 import { Toast } from '@/components/ui/Toast'
-import { BarChart3, Briefcase, LayoutDashboard, LogOut, Phone, Settings, Shield, Users } from 'lucide-react'
+import { BarChart3, Briefcase, LayoutDashboard, LogOut, Phone, Settings, Shield, Users, Zap, BookOpen } from 'lucide-react'
 
 const navItems = [
   { to: '/leads', label: 'Lead Discovery', icon: LayoutDashboard },
+  { to: '/pain-points', label: 'Pain Points Glance', icon: Zap },
+  { to: '/pain-points-catalog', label: 'Pain Points Catalog', icon: BookOpen },
   { to: '/apis', label: 'API Sources', icon: Briefcase },
   { to: '/script', label: 'Script Generator', icon: Phone },
   { to: '/tracker', label: 'Call Tracker', icon: BarChart3 },

@@ -8,6 +8,8 @@ import { SolutionsPage } from '@/features/solutions/SolutionsPage'
 import { ApiSourcesPage } from '@/features/apiSources/ApiSourcesPage'
 import { AdminPage } from '@/features/admin/AdminPage'
 import { AuthPage } from '@/features/auth/AuthPage'
+import { PainPointsGlancePage } from '@/features/painpoints/PainPointsGlancePage'
+import { PainPointsCatalogPage } from '@/features/painpoints/PainPointsCatalogPage'
 
 function App() {
   const { user, loading } = useAuth()
@@ -45,6 +47,8 @@ function App() {
         <Route path="/tracker" element={<CallTrackerPage />} />
         <Route path="/solutions" element={<SolutionsPage />} />
         <Route path="/apis" element={<ApiSourcesPage />} />
+        <Route path="/pain-points" element={<PainPointsGlancePage />} />
+        <Route path="/pain-points-catalog" element={<PainPointsCatalogPage />} />
         {user.role === 'admin' && <Route path="/admin" element={<AdminPage />} />}
         <Route path="*" element={<Navigate to="/leads" replace />} />
       </Routes>

@@ -17,6 +17,7 @@ interface AIRequest {
   model: string
   depth: 'quick' | 'deep'
   lead: LeadContext
+  apiKey?: string
 }
 
 const SYSTEM_PROMPT = `You are a B2B sales intelligence assistant for CES, an IT infrastructure consultancy.
@@ -170,9 +171,9 @@ serve(async (req: Request) => {
     return jsonResponse(mockResponse(body))
   }
 
-  const apiKey = Deno.env.get(`${body.provider.toUpperCase()}_API_KEY`)
+  const apiKey = body.apiKey || Deno.env.get(`${body.provider.toUpperCase()}_API_KEY`)
   if (!apiKey) {
-    return errorResponse(`API key not configured for ${body.provider}`, 500)
+    return errorResponse(`API key not configured for ${body.provider}. Add it in Settings → AI Engine or set the ${body.provider.toUpperCase()}_API_KEY Supabase secret.`, 500)
   }
 
   const messages = [

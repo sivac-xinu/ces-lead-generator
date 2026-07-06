@@ -39,6 +39,7 @@ export interface Lead {
   company_source?: string
   _source?: string
   status?: string
+  sales_rep?: string
   created_at?: string
   updated_at?: string
   user_id?: string
@@ -67,6 +68,7 @@ export interface DbLead {
   imported_by?: string
   company_source?: string
   status?: string
+  sales_rep?: string
   created_at?: string
   updated_at?: string
   user_id?: string

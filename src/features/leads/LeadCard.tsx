@@ -32,6 +32,7 @@ export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete }
         <Badge variant={itTypeVariant}>{lead.it_type}</Badge>
         <Badge variant="industry">{lead.industry}</Badge>
         {lead.size && <Badge>{lead.size} emp</Badge>}
+        {lead.sales_rep && <Badge variant="industry">Rep: {lead.sales_rep}</Badge>}
       </div>
 
       <div className="mt-3 text-sm">

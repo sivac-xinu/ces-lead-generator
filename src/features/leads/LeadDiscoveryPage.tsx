@@ -7,6 +7,7 @@ import { LeadCard } from './LeadCard'
 import { IntelligenceModal } from '@/features/intelligence/IntelligenceModal'
 import { CsvImportModal } from '@/features/csv/CsvImportModal'
 import { useDeleteLead, useLeads } from '@/hooks/useLeads'
+import { useProfiles } from '@/hooks/useProfiles'
 import { useUIStore } from '@/store/uiStore'
 import type { Lead } from '@/types'
 
@@ -28,6 +29,7 @@ const sizes = ['1-50', '50-200', '200-500', '500-1000', '1000-5000', '5000+']
 export function LeadDiscoveryPage() {
   const navigate = useNavigate()
   const { data: leads = [], isLoading } = useLeads()
+  const { data: profiles = [] } = useProfiles()
   const deleteLead = useDeleteLead()
   const { showToast, setScriptLeadId, setTrackerLeadId } = useUIStore()
 
@@ -37,6 +39,7 @@ export function LeadDiscoveryPage() {
     icp: '',
     tier: '',
     size: '',
+    salesRep: '',
     search: '',
   })
 
@@ -51,6 +54,7 @@ export function LeadDiscoveryPage() {
       if (filters.icp && !l.icp?.startsWith(filters.icp)) return false
       if (filters.tier && l.tier !== filters.tier) return false
       if (filters.size && l.size !== filters.size) return false
+      if (filters.salesRep && l.sales_rep !== filters.salesRep) return false
       if (q && !l.company.toLowerCase().includes(q) && !l.contact_name.toLowerCase().includes(q))
         return false
       return true
@@ -128,6 +132,12 @@ export function LeadDiscoveryPage() {
           onChange={(v) => setFilters((f) => ({ ...f, size: v }))}
           options={sizes}
         />
+        <FilterSelect
+          label="Sales Rep"
+          value={filters.salesRep}
+          onChange={(v) => setFilters((f) => ({ ...f, salesRep: v }))}
+          options={profiles.map((p) => p.email)}
+        />
         <div className="min-w-[200px] flex-1">
           <label className="label">Search</label>
           <Input
@@ -139,7 +149,7 @@ export function LeadDiscoveryPage() {
         <Button
           variant="secondary"
           onClick={() =>
-            setFilters({ industry: '', itType: '', icp: '', tier: '', size: '', search: '' })
+            setFilters({ industry: '', itType: '', icp: '', tier: '', size: '', salesRep: '', search: '' })
           }
         >
           Clear

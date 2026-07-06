@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { useAIConfigStore } from '@/store/aiConfigStore'
 import type { AIProvider, IntelligenceResult, Lead } from '@/types'
 
 export async function runAIIntelligence(
@@ -7,11 +8,14 @@ export async function runAIIntelligence(
   depth: 'quick' | 'deep',
   lead: Lead
 ): Promise<IntelligenceResult> {
+  const apiKey = provider === 'local' ? '' : useAIConfigStore.getState().getKey(provider)
+
   const { data, error } = await supabase.functions.invoke('ai-proxy', {
     body: {
       provider,
       model,
       depth,
+      apiKey,
       lead: {
         company: lead.company,
         industry: lead.industry,

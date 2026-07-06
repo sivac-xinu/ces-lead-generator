@@ -7,6 +7,8 @@ import { cn } from '@/utils/cn'
 import { deepInferAll } from '@/data/inference'
 import { useUpdateLead } from '@/hooks/useLeads'
 import { useUIStore } from '@/store/uiStore'
+import { AISettingsModal } from './AISettingsModal'
+import { useAIConfigStore } from '@/store/aiConfigStore'
 import type { AIProvider, IcpOption, IntelligenceResult, Lead } from '@/types'
 
 interface IntelligenceModalProps {
@@ -29,8 +31,12 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   const [result, setResult] = useState<IntelligenceResult | null>(null)
   const [selectedIcp, setSelectedIcp] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const updateLead = useUpdateLead()
   const { showToast } = useUIStore()
+  const hasKey = useAIConfigStore((s) =>
+    provider === 'local' ? true : !!s.getKey(provider)
+  )
 
   if (!lead) return null
 
@@ -109,7 +115,16 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Provider</label>
+            <div className="flex items-center justify-between">
+              <label className="label">Provider</label>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                className="text-xs text-ces-orange hover:underline"
+              >
+                AI Settings
+              </button>
+            </div>
             <select
               className="select"
               value={provider}
@@ -148,6 +163,20 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
             </>
           )}
         </div>
+
+        {provider !== 'local' && !hasKey && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            No {provider} API key configured.{' '}
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className="font-medium text-ces-orange hover:underline"
+            >
+              Add key in AI Settings
+            </button>{' '}
+            or the server-side key will be used if available.
+          </div>
+        )}
 
         <Button variant="primary" onClick={run} loading={loading} className="w-full">
           {loading ? 'Analyzing...' : 'Run Intelligence'}
@@ -209,6 +238,7 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
           </div>
         )}
       </div>
+      <AISettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </Modal>
   )
 }

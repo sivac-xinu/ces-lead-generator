@@ -43,6 +43,7 @@ export function dbRowToLead(row: DbLead): Lead {
     pain_points: row.pain_points || [],
     it_type: (row.it_type as ITType) || 'Unknown',
     tier: row.tier as Tier | undefined,
+    sales_rep: row.sales_rep,
   }
 }
 

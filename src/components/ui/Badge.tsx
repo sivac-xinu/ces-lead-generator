@@ -3,9 +3,10 @@ import { cn } from '@/utils/cn'
 interface BadgeProps {
   children: React.ReactNode
   variant?: 'default' | 'cloud' | 'onprem' | 'hybrid' | 'industry' | 'urgency'
+  className?: string
 }
 
-export function Badge({ children, variant = 'default' }: BadgeProps) {
+export function Badge({ children, variant = 'default', className }: BadgeProps) {
   const variants = {
     default: 'bg-slate-100 text-ces-text',
     cloud: 'bg-blue-50 text-blue-700',
@@ -16,7 +17,7 @@ export function Badge({ children, variant = 'default' }: BadgeProps) {
   }
 
   return (
-    <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', variants[variant])}>
+    <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', variants[variant], className)}>
       {children}
     </span>
   )

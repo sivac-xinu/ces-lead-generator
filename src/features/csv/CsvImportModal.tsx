@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { useCreateLead } from '@/hooks/useLeads'
+import { useProfiles } from '@/hooks/useProfiles'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useUIStore } from '@/store/uiStore'
 import { CES_FIELDS, FIELD_SYNONYMS, inferPainPoints } from '@/data/inference'
@@ -77,7 +78,8 @@ function buildLead(
   row: CsvRow,
   mapping: Mapping,
   fileName: string,
-  importedBy: string
+  importedBy: string,
+  salesRep: string
 ): Partial<Lead> {
   const get = (key: string): string => row[mapping[key]]?.trim() ?? ''
 
@@ -119,6 +121,7 @@ function buildLead(
     imported: true,
     imported_by: importedBy || 'Unknown',
     company_source: fileName,
+    sales_rep: salesRep || undefined,
     status: 'New',
   }
 }
@@ -126,6 +129,7 @@ function buildLead(
 export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
   const { user } = useAuth()
   const createLead = useCreateLead()
+  const { data: profiles = [] } = useProfiles()
   const { showToast } = useUIStore()
 
   const inputRef = useRef<HTMLInputElement>(null)
@@ -143,6 +147,7 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
   const [headers, setHeaders] = useState<string[]>([])
   const [rows, setRows] = useState<CsvRow[]>([])
   const [mapping, setMapping] = useState<Mapping>({})
+  const [salesRep, setSalesRep] = useState('')
   const [importing, setImporting] = useState(false)
   const [done, setDone] = useState(false)
   const [progress, setProgress] = useState({ completed: 0, total: 0, errors: 0 })
@@ -154,6 +159,7 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
     setHeaders([])
     setRows([])
     setMapping({})
+    setSalesRep('')
     setImporting(false)
     setDone(false)
     setProgress({ completed: 0, total: 0, errors: 0 })
@@ -232,6 +238,7 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
 
     const fileName = file?.name ?? 'unknown.csv'
     const importedBy = user?.email ?? 'Unknown'
+    const assignedSalesRep = salesRep || importedBy
 
     let completed = 0
     let errors = 0
@@ -240,7 +247,7 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
       if (cancelledRef.current) return
       const chunk = rows.slice(i, i + CHUNK_SIZE)
       const results = await Promise.allSettled(
-        chunk.map((row) => createLead.mutateAsync(buildLead(row, mapping, fileName, importedBy)))
+        chunk.map((row) => createLead.mutateAsync(buildLead(row, mapping, fileName, importedBy, assignedSalesRep)))
       )
 
       if (cancelledRef.current) return
@@ -371,6 +378,26 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
 
         {headers.length > 0 && (
           <div className="space-y-4">
+            <div>
+              <label className="label">Assign Sales Rep</label>
+              <Select
+                aria-label="Assign sales rep"
+                value={salesRep}
+                onChange={(e) => setSalesRep(e.target.value)}
+                disabled={importing}
+              >
+                <option value="">— Default (importer) —</option>
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.email}>
+                    {p.email}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-1 text-xs text-ces-muted">
+                Choose the sales rep who will own these leads. Defaults to you if left blank.
+              </p>
+            </div>
+
             <div>
               <h3 className="text-sm font-semibold text-ces-navy">Column Mapping</h3>
               <p className="text-xs text-ces-muted">

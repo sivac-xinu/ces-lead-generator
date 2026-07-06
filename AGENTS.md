@@ -87,14 +87,19 @@ npm run typecheck     # TypeScript
 All v1 features ported:
 - Auth (sign in/up/reset, pending approval, roles)
 - Lead Discovery (filters, search, actions)
-- Lead Intelligence (4 AI providers + local rules)
+- Lead Intelligence (4 AI providers + local rules) with AI Settings for per-user API keys
 - Pain Point management / ICP / Tier editor
+- Pain Points Glance (global read-only view grouped by company or theme)
+- Pain Points Catalog (reusable library with theme/tags CRUD)
 - Script Generator (5 tones, solution mapping, objections)
 - Call Tracker (pipeline, log form, history)
 - Solutions Catalog (admin CRUD)
-- CSV Import wizard
+- CSV Import wizard with sales rep assignment
 - API Sources (ZoomInfo + Clearbit)
 - Admin page (approve/reject users, roles, delete)
+
+## Database Migrations
+See `MIGRATIONS.md` for SQL required to add the `sales_rep` column and create the `pain_point_catalog` table.
 
 ## Known Limitations
 - No ZoomInfo API credentials yet → using mock mode.
