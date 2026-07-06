@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from './AuthProvider'
+import { CESLogo } from '@/components/ui/CESLogo'
 
 export function AuthPage() {
   const { signIn, signUp, resetPassword } = useAuth()
@@ -27,10 +28,18 @@ export function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ces-bg p-4">
-      <div className="w-full max-w-md rounded-xl border border-ces-border bg-white p-8 shadow-sm">
-        <h1 className="text-center text-2xl font-bold text-ces-navy">CES Lead Generator</h1>
-        <p className="mt-2 text-center text-sm text-ces-muted">Sign in to access your leads</p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#00356C] to-[#00244A] p-4">
+      <div className="pointer-events-none absolute inset-0 opacity-20">
+        <div className="absolute -left-20 -top-20 h-96 w-96 rounded-full bg-ces-orange blur-3xl" />
+        <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-full bg-white blur-3xl" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl backdrop-blur">
+        <div className="mb-6 flex flex-col items-center">
+          <CESLogo width={96} light={false} />
+          <h1 className="mt-4 text-center text-2xl font-bold text-ces-navy">CES Lead Generator</h1>
+          <p className="mt-1 text-center text-sm text-ces-muted">Sign in to access your leads</p>
+        </div>
 
         <div className="mt-6 flex gap-2 rounded-lg bg-slate-100 p-1">
           {(['signin', 'signup'] as const).map(m => (
