@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useContext, useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import type { UserProfile, UserRole } from '@/types'
+import { AuthContext, type AuthContextValue, type UserProfile } from './AuthContext'
+import type { UserRole } from '@/types'
 
 const E2E_AUTH_BYPASS_ENV = import.meta.env.VITE_E2E_AUTH_BYPASS === 'true'
 
@@ -11,19 +12,6 @@ const E2E_USER: UserProfile = {
   role: 'admin',
   approved: true,
 }
-
-export interface AuthContextValue {
-  user: UserProfile | null
-  session: boolean
-  loading: boolean
-  isAdmin: boolean
-  signIn: (email: string, password: string) => Promise<{ error?: Error }>
-  signUp: (email: string, password: string) => Promise<{ error?: Error }>
-  signOut: () => Promise<void>
-  resetPassword: (email: string) => Promise<{ error?: Error }>
-}
-
-export const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 function getBypassUser(): UserProfile | null {
   // The E2E bypass requires both the build-time env flag and a runtime localStorage

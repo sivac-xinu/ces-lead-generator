@@ -2,7 +2,7 @@ import { render as rtlRender, type RenderOptions, screen } from '@testing-librar
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import type { ReactElement, ReactNode } from 'react'
-import { AuthContext, type AuthContextValue } from '@/features/auth/AuthProvider'
+import { AuthContext, type AuthContextValue } from '@/features/auth/AuthContext'
 
 const mockAuthContext: AuthContextValue = {
   user: { id: 'test-user', email: 'test@example.com', role: 'admin', approved: true },
