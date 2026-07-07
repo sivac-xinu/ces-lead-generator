@@ -32,6 +32,7 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   const [selectedIcp, setSelectedIcp] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [usedFallback, setUsedFallback] = useState(false)
+  const [fallbackReason, setFallbackReason] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const updateLead = useUpdateLead()
   const { showToast } = useUIStore()
@@ -44,22 +45,32 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   const run = async () => {
     setLoading(true)
     setUsedFallback(false)
+    setFallbackReason(null)
     try {
       let res: IntelligenceResult
       let fallback = false
+      let reason: string | null = null
       if (provider === 'local') {
         res = deepInferAll(lead)
       } else {
         const aiRes = await runAIIntelligence(provider, model, depth, lead)
         res = aiRes.result
         fallback = aiRes.fallback
+        if (aiRes.notDeployed) {
+          reason = 'not-deployed'
+        } else if (aiRes.errorMessage) {
+          reason = aiRes.errorMessage
+        }
       }
       setResult(res)
       setUsedFallback(fallback)
+      setFallbackReason(reason)
       setSelectedIcp(res.icp || res.icp_options[0]?.value || null)
       if (fallback) {
         showToast(
-          'AI proxy is not deployed — returned local-rule results instead. Deploy ai-proxy to use cloud providers.',
+          reason === 'not-deployed'
+            ? 'AI proxy is not deployed — returned local-rule results instead.'
+            : `AI provider error — returned local-rule results instead: ${reason}`,
           'error'
         )
       }
@@ -196,16 +207,27 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
 
         {usedFallback && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            <p className="font-medium">AI proxy Edge Function is not deployed</p>
-            <p className="mt-1">
-              Adding an API key is not enough — the <code>ai-proxy</code> function code must also be
-              deployed to your Supabase project. Results were generated with Local Rules instead.
-            </p>
-            <p className="mt-2 font-medium">Run these commands from the project folder:</p>
-            <pre className="mt-2 overflow-x-auto rounded bg-amber-100 p-2 text-xs">
+            {fallbackReason === 'not-deployed' ? (
+              <>
+                <p className="font-medium">AI proxy Edge Function is not deployed</p>
+                <p className="mt-1">
+                  Adding an API key is not enough — the <code>ai-proxy</code> function code must also
+                  be deployed to your Supabase project. Results were generated with Local Rules instead.
+                </p>
+                <p className="mt-2 font-medium">Run these commands from the project folder:</p>
+                <pre className="mt-2 overflow-x-auto rounded bg-amber-100 p-2 text-xs">
 {`npx supabase login
 npx supabase functions deploy ai-proxy`}
-            </pre>
+                </pre>
+              </>
+            ) : (
+              <>
+                <p className="font-medium">AI provider error</p>
+                <p className="mt-1">
+                  Results were generated with Local Rules instead. Error: {fallbackReason}
+                </p>
+              </>
+            )}
             <p className="mt-2">
               Or switch to <strong>Local Rules</strong> to avoid this warning.
             </p>

@@ -15,6 +15,25 @@ export class AIFunctionNotDeployedError extends Error {
 export interface AIIntelligenceResponse {
   result: IntelligenceResult
   fallback: boolean
+  errorMessage?: string
+  notDeployed?: boolean
+}
+
+function isNotDeployedError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  const message = error.message?.toLowerCase() ?? ''
+  return (
+    message.includes('not found') ||
+    message.includes('404') ||
+    message.includes('preflight') ||
+    message.includes('cannot load')
+  )
+}
+
+function isMissingKeyError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  const message = error.message?.toLowerCase() ?? ''
+  return message.includes('api key not configured') || message.includes('missing authentication')
 }
 
 export async function runAIIntelligence(
@@ -47,13 +66,7 @@ export async function runAIIntelligence(
     })
 
     if (error) {
-      const message = error.message?.toLowerCase() ?? ''
-      const isNotFound =
-        message.includes('not found') ||
-        message.includes('404') ||
-        message.includes('preflight') ||
-        message.includes('cannot load')
-      if (isNotFound) {
+      if (isNotDeployedError(error)) {
         throw new AIFunctionNotDeployedError()
       }
       throw error
@@ -61,15 +74,24 @@ export async function runAIIntelligence(
 
     return { result: data as IntelligenceResult, fallback: false }
   } catch (err) {
+    const message = err instanceof Error ? err.message : 'AI request failed'
+
     if (err instanceof AIFunctionNotDeployedError) {
       if (fallbackToLocal) {
-        return { result: deepInferAll(lead), fallback: true }
+        return { result: deepInferAll(lead), fallback: true, notDeployed: true }
       }
       throw err
     }
 
+    if (isMissingKeyError(err)) {
+      // Surface the missing-key error so the user knows to add/save a key.
+      throw new Error(
+        `API key not configured for ${provider}. Add it in Settings → AI Engine and click Save, or set the ${provider.toUpperCase()}_API_KEY Supabase secret.`
+      )
+    }
+
     if (fallbackToLocal) {
-      return { result: deepInferAll(lead), fallback: true }
+      return { result: deepInferAll(lead), fallback: true, errorMessage: message }
     }
     throw err
   }
