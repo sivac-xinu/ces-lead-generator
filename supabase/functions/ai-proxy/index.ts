@@ -73,7 +73,18 @@ async function callOpenRouter(apiKey: string, model: string, messages: unknown[]
     },
     body: JSON.stringify({ model, messages, temperature: 0.4 }),
   })
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${await res.text()}`)
+  if (!res.ok) {
+    const body = await res.text()
+    if (res.status === 404 && body.includes('No endpoints found')) {
+      throw new Error(
+        `OpenRouter model "${model}" is not available. Choose a different model in the Intelligence modal.`
+      )
+    }
+    if (res.status === 401) {
+      throw new Error('OpenRouter API key is invalid or missing.')
+    }
+    throw new Error(`OpenRouter ${res.status}: ${body}`)
+  }
   const data = await res.json()
   return stripJson(data.choices?.[0]?.message?.content || '')
 }
@@ -87,7 +98,11 @@ async function callOpenAI(apiKey: string, model: string, messages: unknown[]) {
     },
     body: JSON.stringify({ model, messages, temperature: 0.4 }),
   })
-  if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`)
+  if (!res.ok) {
+    const body = await res.text()
+    if (res.status === 401) throw new Error('OpenAI API key is invalid or missing.')
+    throw new Error(`OpenAI ${res.status}: ${body}`)
+  }
   const data = await res.json()
   return stripJson(data.choices?.[0]?.message?.content || '')
 }
@@ -102,7 +117,11 @@ async function callAnthropic(apiKey: string, model: string, messages: unknown[])
     },
     body: JSON.stringify({ model, messages, max_tokens: 2000, temperature: 0.4 }),
   })
-  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`)
+  if (!res.ok) {
+    const body = await res.text()
+    if (res.status === 401) throw new Error('Anthropic API key is invalid or missing.')
+    throw new Error(`Anthropic ${res.status}: ${body}`)
+  }
   const data = await res.json()
   return stripJson(data.content?.[0]?.text || '')
 }
