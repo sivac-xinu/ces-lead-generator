@@ -48,9 +48,21 @@ export function AuthPage() {
       return
     }
 
-    const action = mode === 'signin' ? signIn : signUp
-    const { error } = await action(email, password)
-    if (error) setError(error.message)
+    if (mode === 'signin') {
+      const { error } = await signIn(email, password)
+      if (error) setError(error.message)
+      return
+    }
+
+    const { error } = await signUp(email, password)
+    if (error) {
+      setError(error.message)
+      return
+    }
+
+    setMessage('Account created. Please check your email for a confirmation link.')
+    setEmail('')
+    setPassword('')
   }
 
   return (
