@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { parse } from 'papaparse'
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download, Info } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
@@ -23,6 +23,37 @@ type Mapping = Record<string, string>
 
 const MAX_ROWS = 5000
 const CHUNK_SIZE = 5
+
+function generateSampleCsv(): string {
+  const headers = CES_FIELDS.map((f) => `"${f.label}"`)
+  const sampleRow = CES_FIELDS.map((f) => {
+    if (f.key === 'contact_name') return '"Jane Smith"'
+    if (f.key === 'first_name') return '"Jane"'
+    if (f.key === 'last_name') return '"Smith"'
+    if (f.key === 'contact_title') return '"VP of Information Technology"'
+    if (f.key === 'company') return '"Acme Corp"'
+    if (f.key === 'industry') return '"Healthcare"'
+    if (f.key === 'employees') return '"350"'
+    if (f.key === 'location') return '"Chicago, IL"'
+    if (f.key === 'contact_email') return '"jane.smith@acme.com"'
+    if (f.key === 'contact_phone') return '"+1 312-555-0100"'
+    if (f.key === 'website') return '"https://linkedin.com/in/janesmith"'
+    return '""'
+  })
+  return [headers.join(','), sampleRow.join(',')].join('\n')
+}
+
+function downloadSampleCsv() {
+  const blob = new Blob([generateSampleCsv()], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'linkedin-leads-sample.csv'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 
 function normalizeHeader(header: string): string {
   return header
@@ -323,6 +354,42 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
   return (
     <Modal open={open} onClose={handleClose} title="Import CSV Leads" size="lg" footer={footer}>
       <div className="space-y-6">
+        <div className="rounded-xl border border-ces-border bg-ces-card p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Info className="h-4 w-4 text-ces-orange" />
+            <h3 className="text-sm font-semibold text-ces-navy">Supported CSV columns</h3>
+          </div>
+          <p className="mb-3 text-xs text-ces-muted">
+            The importer auto-detects headers. Required columns are marked with{' '}
+            <span className="text-red-500">*</span>. Extra columns are ignored.
+          </p>
+          <div className="grid gap-2 text-xs sm:grid-cols-2">
+            {CES_FIELDS.map((field) => {
+              const synonyms = FIELD_SYNONYMS[field.key] ?? []
+              return (
+                <div key={field.key} className="rounded-lg border border-ces-border bg-white p-2.5">
+                  <div className="font-medium text-ces-text">
+                    {field.label}
+                    {field.required && <span className="ml-1 text-red-500">*</span>}
+                  </div>
+                  {synonyms.length > 0 && (
+                    <div className="mt-1 text-ces-muted">
+                      Accepts: {synonyms.slice(0, 5).join(', ')}
+                      {synonyms.length > 5 && ` +${synonyms.length - 5} more`}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={downloadSampleCsv}>
+              <Download className="mr-1.5 h-3.5 w-3.5" /> Download sample CSV
+            </Button>
+            <span className="text-xs text-ces-muted">Use this template to format your LinkedIn export.</span>
+          </div>
+        </div>
+
         <div
           className={cn(
             'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 transition-colors',
