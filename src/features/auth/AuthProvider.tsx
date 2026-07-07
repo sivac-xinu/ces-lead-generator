@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { UserProfile, UserRole } from '@/types'
 
@@ -35,6 +36,7 @@ function getBypassUser(): UserProfile | null {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate()
   const [user, setUser] = useState<UserProfile | null>(getBypassUser)
   const [loading, setLoading] = useState(() => user === null)
 
@@ -92,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut()
     setUser(null)
+    navigate('/', { replace: true })
   }
 
   const resetPassword = async (email: string) => {
