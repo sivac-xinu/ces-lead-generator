@@ -40,6 +40,12 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - **Clearbit import** — creates company-only lead, contacts added later via UI
 - Sales rep assignment on all import paths
 
+### Security Hardening
+- Added Row Level Security (RLS) migration for all public tables (`leads`, `contacts`, `call_logs`, `solutions`, `profiles`, `audit_log`, `pain_point_catalog`, `ces_settings`)
+- Replaced overly permissive `Allow all` policies with authenticated-only / admin-only policies
+- Added `public.is_admin()` helper and signup trigger to create `profiles` rows securely
+- Edge Functions continue to use service role key for admin operations
+
 ### Multi-Contact Support (New)
 - New `contacts` table with `lead_id`, `name`, `title`, `email`, `phone`, `is_primary`, `source`
 - `useCreateLead` automatically creates primary contact record from lead contact fields
