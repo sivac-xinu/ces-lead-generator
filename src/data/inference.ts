@@ -199,9 +199,15 @@ export const INFER_INDUSTRY: Record<string, string[]> = {
 
 export const CES_FIELDS: CsvField[] = [
   {
+    key: 'company',
+    label: 'Company Name',
+    required: true,
+    default: null,
+  },
+  {
     key: 'contact_name',
     label: 'Contact Full Name',
-    required: true,
+    required: false,
     default: null,
   },
   {
@@ -219,14 +225,8 @@ export const CES_FIELDS: CsvField[] = [
   {
     key: 'contact_title',
     label: 'Job Title',
-    required: true,
+    required: false,
     default: '—',
-  },
-  {
-    key: 'company',
-    label: 'Company Name',
-    required: true,
-    default: null,
   },
   {
     key: 'industry',

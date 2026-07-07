@@ -8,6 +8,7 @@ import { useCreateLead } from '@/hooks/useLeads'
 import { useProfiles } from '@/hooks/useProfiles'
 import { useUIStore } from '@/store/uiStore'
 import { inferICP, inferITType, inferTier } from '@/utils/lead'
+import { Plus, Trash2, Star } from 'lucide-react'
 
 interface AddLeadModalProps {
   open: boolean
@@ -26,6 +27,13 @@ const industries = [
   'Other',
 ]
 
+interface ContactForm {
+  name: string
+  title: string
+  email: string
+  phone: string
+}
+
 export function AddLeadModal({ open, onClose }: AddLeadModalProps) {
   const { user } = useAuth()
   const createLead = useCreateLead()
@@ -34,30 +42,28 @@ export function AddLeadModal({ open, onClose }: AddLeadModalProps) {
 
   const [form, setForm] = useState({
     company: '',
-    contact_name: '',
-    contact_title: '',
-    contact_email: '',
-    contact_phone: '',
     industry: 'Other',
     employees: '',
     location: '',
     website: '',
     sales_rep: user?.email ?? '',
   })
+  const [contacts, setContacts] = useState<ContactForm[]>([
+    { name: '', title: '', email: '', phone: '' },
+  ])
+  const [primaryIndex, setPrimaryIndex] = useState(0)
 
   const reset = () => {
     setForm({
       company: '',
-      contact_name: '',
-      contact_title: '',
-      contact_email: '',
-      contact_phone: '',
       industry: 'Other',
       employees: '',
       location: '',
       website: '',
       sales_rep: user?.email ?? '',
     })
+    setContacts([{ name: '', title: '', email: '', phone: '' }])
+    setPrimaryIndex(0)
   }
 
   const handleClose = () => {
@@ -65,22 +71,44 @@ export function AddLeadModal({ open, onClose }: AddLeadModalProps) {
     onClose()
   }
 
+  const updateContact = (index: number, field: keyof ContactForm, value: string) => {
+    setContacts((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
+  }
+
+  const addContact = () => {
+    setContacts((prev) => [...prev, { name: '', title: '', email: '', phone: '' }])
+  }
+
+  const removeContact = (index: number) => {
+    setContacts((prev) => {
+      const next = prev.filter((_, i) => i !== index)
+      if (primaryIndex >= next.length) setPrimaryIndex(Math.max(0, next.length - 1))
+      return next
+    })
+  }
+
   const handleSave = async () => {
-    if (!form.company.trim() || !form.contact_name.trim()) {
-      showToast('Company and contact name are required', 'error')
+    if (!form.company.trim()) {
+      showToast('Company name is required', 'error')
+      return
+    }
+    const validContacts = contacts.filter((c) => c.name.trim())
+    if (validContacts.length === 0) {
+      showToast('At least one contact with a name is required', 'error')
       return
     }
 
     const employees = form.employees ? parseInt(form.employees, 10) : undefined
     const industry = form.industry || 'Other'
+    const primary = validContacts[primaryIndex] ?? validContacts[0]
 
     try {
       await createLead.mutateAsync({
         company: form.company.trim(),
-        contact_name: form.contact_name.trim(),
-        contact_title: form.contact_title.trim() || '—',
-        contact_email: form.contact_email.trim() || undefined,
-        contact_phone: form.contact_phone.trim() || undefined,
+        contact_name: primary.name.trim(),
+        contact_title: primary.title.trim() || '—',
+        contact_email: primary.email.trim() || undefined,
+        contact_phone: primary.phone.trim() || undefined,
         industry,
         employees: employees && !Number.isNaN(employees) ? employees : undefined,
         location: form.location.trim() || undefined,
@@ -94,6 +122,14 @@ export function AddLeadModal({ open, onClose }: AddLeadModalProps) {
         imported_by: user?.email ?? 'Manual',
         sales_rep: form.sales_rep || user?.email || undefined,
         status: 'New',
+        contacts: validContacts.map((c, i) => ({
+          name: c.name.trim(),
+          title: c.title.trim() || undefined,
+          email: c.email.trim() || undefined,
+          phone: c.phone.trim() || undefined,
+          is_primary: i === primaryIndex,
+          source: 'Manual',
+        })),
       })
       showToast('Lead added')
       handleClose()
@@ -123,64 +159,122 @@ export function AddLeadModal({ open, onClose }: AddLeadModalProps) {
         </div>
       }
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <label className="label">Company Name *</label>
-          <Input value={form.company} onChange={(e) => update('company', e.target.value)} />
+      <div className="space-y-6">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className="label">Company Name *</label>
+            <Input value={form.company} onChange={(e) => update('company', e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Industry</label>
+            <Select value={form.industry} onChange={(e) => update('industry', e.target.value)}>
+              {industries.map((i) => (
+                <option key={i} value={i}>
+                  {i}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label className="label">Employees</label>
+            <Input type="number" value={form.employees} onChange={(e) => update('employees', e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Location</label>
+            <Input value={form.location} onChange={(e) => update('location', e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Website / LinkedIn</label>
+            <Input value={form.website} onChange={(e) => update('website', e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Sales Rep *</label>
+            <Select value={form.sales_rep} onChange={(e) => update('sales_rep', e.target.value)}>
+              <option value="">— Select —</option>
+              {profiles.map((p) => (
+                <option key={p.id} value={p.email}>
+                  {p.email}
+                </option>
+              ))}
+            </Select>
+            <p className="mt-1 text-xs text-ces-muted">This rep is accountable for the lead.</p>
+          </div>
         </div>
-        <div>
-          <label className="label">Contact Name *</label>
-          <Input value={form.contact_name} onChange={(e) => update('contact_name', e.target.value)} />
-        </div>
-        <div>
-          <label className="label">Job Title</label>
-          <Input value={form.contact_title} onChange={(e) => update('contact_title', e.target.value)} />
-        </div>
-        <div>
-          <label className="label">Email</label>
-          <Input value={form.contact_email} onChange={(e) => update('contact_email', e.target.value)} />
-        </div>
-        <div>
-          <label className="label">Phone</label>
-          <Input value={form.contact_phone} onChange={(e) => update('contact_phone', e.target.value)} />
-        </div>
-        <div>
-          <label className="label">Industry</label>
-          <Select value={form.industry} onChange={(e) => update('industry', e.target.value)}>
-            {industries.map((i) => (
-              <option key={i} value={i}>
-                {i}
-              </option>
+
+        <div className="border-t border-ces-border pt-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-semibold text-ces-navy">Contacts *</h3>
+            <Button type="button" size="sm" variant="secondary" onClick={addContact}>
+              <Plus className="mr-1 h-4 w-4" /> Add Contact
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {contacts.map((contact, index) => (
+              <div
+                key={index}
+                className={`rounded-lg border p-3 ${index === primaryIndex ? 'border-ces-orange bg-orange-50/50' : 'border-ces-border'}`}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-medium text-ces-navy">Contact {index + 1}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPrimaryIndex(index)}
+                      className={`flex items-center gap-1 text-xs ${index === primaryIndex ? 'text-ces-orange' : 'text-ces-muted hover:text-ces-text'}`}
+                      title="Set as primary contact"
+                    >
+                      <Star className="h-4 w-4" fill={index === primaryIndex ? 'currentColor' : 'none'} />
+                      {index === primaryIndex ? 'Primary' : 'Set Primary'}
+                    </button>
+                    {contacts.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeContact(index)}
+                        className="text-ces-muted hover:text-red-600"
+                        title="Remove contact"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="label text-xs">Name *</label>
+                    <Input
+                      value={contact.name}
+                      onChange={(e) => updateContact(index, 'name', e.target.value)}
+                      placeholder="Jane Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="label text-xs">Job Title</label>
+                    <Input
+                      value={contact.title}
+                      onChange={(e) => updateContact(index, 'title', e.target.value)}
+                      placeholder="CIO"
+                    />
+                  </div>
+                  <div>
+                    <label className="label text-xs">Email</label>
+                    <Input
+                      value={contact.email}
+                      onChange={(e) => updateContact(index, 'email', e.target.value)}
+                      placeholder="jane@company.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="label text-xs">Phone</label>
+                    <Input
+                      value={contact.phone}
+                      onChange={(e) => updateContact(index, 'phone', e.target.value)}
+                      placeholder="+1 555 123 4567"
+                    />
+                  </div>
+                </div>
+              </div>
             ))}
-          </Select>
-        </div>
-        <div>
-          <label className="label">Employees</label>
-          <Input
-            type="number"
-            value={form.employees}
-            onChange={(e) => update('employees', e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="label">Location</label>
-          <Input value={form.location} onChange={(e) => update('location', e.target.value)} />
-        </div>
-        <div>
-          <label className="label">Website / LinkedIn</label>
-          <Input value={form.website} onChange={(e) => update('website', e.target.value)} />
-        </div>
-        <div>
-          <label className="label">Sales Rep *</label>
-          <Select value={form.sales_rep} onChange={(e) => update('sales_rep', e.target.value)}>
-            <option value="">— Select —</option>
-            {profiles.map((p) => (
-              <option key={p.id} value={p.email}>
-                {p.email}
-              </option>
-            ))}
-          </Select>
-          <p className="mt-1 text-xs text-ces-muted">This rep is accountable for the lead.</p>
+          </div>
         </div>
       </div>
     </Modal>

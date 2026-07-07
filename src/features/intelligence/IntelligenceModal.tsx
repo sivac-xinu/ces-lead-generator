@@ -10,7 +10,9 @@ import { useUIStore } from '@/store/uiStore'
 import { AISettingsModal } from './AISettingsModal'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useAISettings } from '@/hooks/useAISettings'
-import type { AIProvider, IcpOption, IntelligenceResult, Lead } from '@/types'
+import { ContactsPanel } from '@/features/contacts/ContactsPanel'
+import { useContacts } from '@/hooks/useContacts'
+import type { AIProvider, Contact, IcpOption, IntelligenceResult, Lead } from '@/types'
 
 interface IntelligenceModalProps {
   lead: Lead | null
@@ -35,10 +37,12 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   const [usedFallback, setUsedFallback] = useState(false)
   const [fallbackReason, setFallbackReason] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const updateLead = useUpdateLead()
   const { showToast } = useUIStore()
   const { isAdmin } = useAuth()
   const { data: adminKeys } = useAISettings()
+  const { data: contacts = [] } = useContacts(lead?.id)
   function getAdminKey(p: AIProvider): string | undefined {
     if (!adminKeys) return undefined
     if (p === 'openrouter') return adminKeys.openrouter_key
@@ -49,6 +53,8 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   const hasKey = provider === 'local' || !!getAdminKey(provider)
 
   if (!lead) return null
+
+  const activeContact = selectedContact || contacts.find((c) => c.is_primary) || contacts[0] || null
 
   const run = async () => {
     setLoading(true)
@@ -61,7 +67,16 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
       if (provider === 'local') {
         res = deepInferAll(lead)
       } else {
-        const aiRes = await runAIIntelligence(provider, model, depth, lead)
+        const aiLead = activeContact
+          ? {
+              ...lead,
+              contact_name: activeContact.name,
+              contact_title: activeContact.title ?? lead.contact_title,
+              contact_email: activeContact.email ?? lead.contact_email,
+              contact_phone: activeContact.phone ?? lead.contact_phone,
+            }
+          : lead
+        const aiRes = await runAIIntelligence(provider, model, depth, aiLead)
         res = aiRes.result
         fallback = aiRes.fallback
         if (aiRes.notDeployed) {
@@ -143,6 +158,28 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
           </div>
           <Badge variant="industry">{provider === 'local' ? 'Local Rules' : `${provider} AI`}</Badge>
         </div>
+
+        <ContactsPanel leadId={lead.id} />
+
+        {contacts.length > 0 && (
+          <div>
+            <label className="label">Analyze Contact</label>
+            <select
+              className="select"
+              value={activeContact?.id ?? ''}
+              onChange={(e) => {
+                const id = parseInt(e.target.value, 10)
+                setSelectedContact(contacts.find((c) => c.id === id) || null)
+              }}
+            >
+              {contacts.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} {c.title ? `(${c.title})` : ''} {c.is_primary ? '— Primary' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div>

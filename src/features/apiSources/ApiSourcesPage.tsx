@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { searchZoomInfoCompanies, type ZoomInfoLeadPartial } from '@/lib/zoominfo'
 import { useAuth } from '@/features/auth/AuthProvider'
-import { useCreateLead } from '@/hooks/useLeads'
+import { useCreateLead, type CreateLeadInput } from '@/hooks/useLeads'
 import { useUIStore } from '@/store/uiStore'
 import { inferICP, inferITType, inferTier } from '@/utils/lead'
-import type { Lead } from '@/types'
+
 
 type Tab = 'zoominfo' | 'clearbit'
 
@@ -16,15 +16,16 @@ interface ClearbitSuggestion {
   logo: string
 }
 
-function buildLeadFromZoomInfo(result: ZoomInfoLeadPartial, salesRep: string): Partial<Lead> {
+function buildLeadFromZoomInfo(result: ZoomInfoLeadPartial, salesRep: string): CreateLeadInput {
   const industry = result.industry || 'Unknown'
+  const contactName = result.contact_name || ''
   return {
     company: result.company,
     industry,
     employees: result.employees,
     website: result.website,
     location: result.location,
-    contact_name: result.contact_name || '',
+    contact_name: contactName,
     contact_title: result.contact_title || '',
     contact_email: result.contact_email,
     contact_phone: result.contact_phone,
@@ -39,10 +40,22 @@ function buildLeadFromZoomInfo(result: ZoomInfoLeadPartial, salesRep: string): P
     company_source: 'ZoomInfo Search',
     sales_rep: salesRep || undefined,
     status: 'New',
+    contacts: contactName
+      ? [
+          {
+            name: contactName,
+            title: result.contact_title || undefined,
+            email: result.contact_email,
+            phone: result.contact_phone,
+            is_primary: true,
+            source: 'ZoomInfo Search',
+          },
+        ]
+      : undefined,
   }
 }
 
-function buildLeadFromClearbit(result: ClearbitSuggestion, salesRep: string): Partial<Lead> {
+function buildLeadFromClearbit(result: ClearbitSuggestion, salesRep: string): CreateLeadInput {
   return {
     company: result.name,
     website: result.domain,
@@ -57,6 +70,7 @@ function buildLeadFromClearbit(result: ClearbitSuggestion, salesRep: string): Pa
     company_source: result.domain,
     sales_rep: salesRep || undefined,
     status: 'New',
+    contacts: [],
   }
 }
 

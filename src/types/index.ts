@@ -15,6 +15,19 @@ export type CallOutcome =
   | 'Not Interested'
   | 'Closed Won'
 
+export interface Contact {
+  id: number
+  lead_id: number
+  name: string
+  title?: string
+  email?: string
+  phone?: string
+  is_primary?: boolean
+  source?: string
+  created_at?: string
+  updated_at?: string
+}
+
 export interface Lead {
   id: number
   company: string
@@ -22,6 +35,7 @@ export interface Lead {
   contact_title: string
   contact_email?: string
   contact_phone?: string
+  contacts?: Contact[]
   industry: string
   employees?: number
   size?: string
@@ -43,6 +57,19 @@ export interface Lead {
   created_at?: string
   updated_at?: string
   user_id?: string
+}
+
+export interface DbContact {
+  id: number
+  lead_id: number
+  name: string
+  title?: string
+  email?: string
+  phone?: string
+  is_primary?: boolean
+  source?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface DbLead {

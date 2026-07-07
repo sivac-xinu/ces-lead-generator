@@ -4,14 +4,14 @@ import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download, Info } fr
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
-import { useCreateLead } from '@/hooks/useLeads'
+import { useCreateLead, type CreateLeadInput } from '@/hooks/useLeads'
 import { useProfiles } from '@/hooks/useProfiles'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useUIStore } from '@/store/uiStore'
 import { CES_FIELDS, FIELD_SYNONYMS, inferPainPoints } from '@/data/inference'
 import { inferICP, inferITType, inferTier } from '@/utils/lead'
 import { cn } from '@/utils/cn'
-import type { Lead } from '@/types'
+import type { Contact } from '@/types'
 
 interface CsvImportModalProps {
   open: boolean
@@ -105,55 +105,71 @@ function parseEmployees(raw?: string): number | undefined {
   return Number.isNaN(num) ? undefined : num
 }
 
-function buildLead(
-  row: CsvRow,
-  mapping: Mapping,
-  fileName: string,
-  importedBy: string,
-  salesRep: string
-): Partial<Lead> {
+function buildContactFromRow(row: CsvRow, mapping: Mapping): Partial<Contact> {
   const get = (key: string): string => row[mapping[key]]?.trim() ?? ''
-
-  const company = get('company') || 'Unknown Company'
 
   const contactNameRaw = get('contact_name')
   const firstName = get('first_name')
   const lastName = get('last_name')
-  const contact_name =
+  const name =
     contactNameRaw ||
-    (firstName && lastName
-      ? `${firstName} ${lastName}`
-      : firstName || lastName || 'Unknown Contact')
+    (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || '')
 
-  const contact_title = get('contact_title') || '—'
+  if (!name) return {}
+
+  return {
+    name,
+    title: get('contact_title') || undefined,
+    email: get('contact_email') || undefined,
+    phone: get('contact_phone') || undefined,
+  }
+}
+
+function buildLeadFromGroup(
+  company: string,
+  group: CsvRow[],
+  mapping: Mapping,
+  fileName: string,
+  importedBy: string,
+  salesRep: string
+): CreateLeadInput {
+  const firstRow = group[0]
+  const get = (key: string): string => firstRow[mapping[key]]?.trim() ?? ''
+
   const industry = get('industry') || 'Other'
   const employees = parseEmployees(get('employees'))
-
   const it_type = inferITType(industry)
   const tier = inferTier(employees)
   const icp = inferICP(employees)
-  const pain_points = inferPainPoints(contact_title, industry)
+
+  const contacts = group
+    .map((row) => buildContactFromRow(row, mapping))
+    .filter((c): c is Partial<Contact> & { name: string } => !!c.name)
+    .map((c, i) => ({ ...c, is_primary: i === 0, source: `CSV: ${fileName}` }))
+
+  const primary = contacts[0]
 
   return {
     company,
-    contact_name,
-    contact_title,
+    contact_name: primary?.name ?? 'Unknown Contact',
+    contact_title: primary?.title ?? '—',
     industry,
     employees,
     location: get('location') || undefined,
-    contact_email: get('contact_email') || undefined,
-    contact_phone: get('contact_phone') || undefined,
+    contact_email: primary?.email,
+    contact_phone: primary?.phone,
     website: get('website') || undefined,
     linkedin_url: get('website') || undefined,
     it_type,
     tier,
     icp,
-    pain_points,
+    pain_points: inferPainPoints(primary?.title ?? '', industry),
     imported: true,
     imported_by: importedBy || 'Unknown',
     company_source: fileName,
     sales_rep: salesRep || undefined,
     status: 'New',
+    contacts,
   }
 }
 
@@ -263,22 +279,36 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
   const handleImport = async () => {
     if (!requiredMapped || rows.length === 0) return
 
-    setImporting(true)
-    setDone(false)
-    setProgress({ completed: 0, total: rows.length, errors: 0 })
-
     const fileName = file?.name ?? 'unknown.csv'
     const importedBy = user?.email ?? 'Unknown'
     const assignedSalesRep = salesRep || importedBy
 
+    // Group rows by company so multiple contacts for the same company become one lead.
+    const grouped = new Map<string, { company: string; rows: CsvRow[] }>()
+    rows.forEach((row) => {
+      const rawCompany = row[mapping.company]?.trim() || 'Unknown Company'
+      const key = rawCompany.toLowerCase()
+      if (!grouped.has(key)) {
+        grouped.set(key, { company: rawCompany, rows: [] })
+      }
+      grouped.get(key)!.rows.push(row)
+    })
+    const leadsToImport = Array.from(grouped.values())
+
+    setImporting(true)
+    setDone(false)
+    setProgress({ completed: 0, total: leadsToImport.length, errors: 0 })
+
     let completed = 0
     let errors = 0
 
-    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    for (let i = 0; i < leadsToImport.length; i += CHUNK_SIZE) {
       if (cancelledRef.current) return
-      const chunk = rows.slice(i, i + CHUNK_SIZE)
+      const chunk = leadsToImport.slice(i, i + CHUNK_SIZE)
       const results = await Promise.allSettled(
-        chunk.map((row) => createLead.mutateAsync(buildLead(row, mapping, fileName, importedBy, assignedSalesRep)))
+        chunk.map(({ company, rows: group }) =>
+          createLead.mutateAsync(buildLeadFromGroup(company, group, mapping, fileName, importedBy, assignedSalesRep))
+        )
       )
 
       if (cancelledRef.current) return
@@ -291,7 +321,7 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
         }
       })
 
-      setProgress({ completed, total: rows.length, errors })
+      setProgress({ completed, total: leadsToImport.length, errors })
     }
 
     if (cancelledRef.current) return
@@ -300,7 +330,7 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
     setDone(true)
 
     if (errors > 0) {
-      showToast(`Imported ${completed} of ${rows.length} leads (${errors} errors)`, 'error')
+      showToast(`Imported ${completed} of ${leadsToImport.length} leads (${errors} errors)`, 'error')
     } else {
       showToast(`Imported ${completed} leads successfully`, 'success')
     }

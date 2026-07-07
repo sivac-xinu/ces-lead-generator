@@ -36,10 +36,16 @@ export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete }
       </div>
 
       <div className="mt-3 text-sm">
-        <p>
-          <span className="font-medium">{lead.contact_name}</span> · {lead.contact_title}
-        </p>
-        {lead.contact_email && <p className="text-ces-muted">{lead.contact_email}</p>}
+        {lead.contact_name ? (
+          <>
+            <p>
+              <span className="font-medium">{lead.contact_name}</span> · {lead.contact_title}
+            </p>
+            {lead.contact_email && <p className="text-ces-muted">{lead.contact_email}</p>}
+          </>
+        ) : (
+          <p className="text-ces-muted">No contacts — open Intelligence to add contacts.</p>
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
