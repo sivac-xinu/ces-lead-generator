@@ -18,6 +18,29 @@ export interface AIIntelligenceResponse {
   notDeployed?: boolean
 }
 
+async function extractFunctionError(error: unknown): Promise<string> {
+  if (!(error instanceof Error)) return 'AI request failed'
+
+  // Supabase functions.invoke returns the response in `error.context`.
+  const ctx = (error as { context?: Response }).context
+  if (ctx && typeof ctx.json === 'function') {
+    try {
+      const body = (await ctx.json()) as { error?: string; message?: string }
+      if (body?.error) return body.error
+      if (body?.message) return body.message
+    } catch {
+      try {
+        const text = await ctx.text()
+        if (text) return text
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  return error.message || 'AI request failed'
+}
+
 function isNotDeployedError(error: unknown): boolean {
   if (!(error instanceof Error)) return false
   const message = error.message?.toLowerCase() ?? ''
@@ -29,9 +52,7 @@ function isNotDeployedError(error: unknown): boolean {
   )
 }
 
-function isMissingKeyError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false
-  const message = error.message?.toLowerCase() ?? ''
+function isMissingKeyError(message: string): boolean {
   return message.includes('api key not configured') || message.includes('missing authentication')
 }
 
@@ -65,12 +86,13 @@ export async function runAIIntelligence(
       if (isNotDeployedError(error)) {
         throw new AIFunctionNotDeployedError()
       }
-      throw error
+      const msg = await extractFunctionError(error)
+      throw new Error(msg)
     }
 
     return { result: data as IntelligenceResult, fallback: false }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'AI request failed'
+    const message = await extractFunctionError(err)
 
     if (err instanceof AIFunctionNotDeployedError) {
       if (fallbackToLocal) {
@@ -79,7 +101,7 @@ export async function runAIIntelligence(
       throw err
     }
 
-    if (isMissingKeyError(err)) {
+    if (isMissingKeyError(message.toLowerCase())) {
       throw new Error(
         `API key not configured for ${provider}. Ask an admin to add it in Settings → AI Engine or set the ${provider.toUpperCase()}_API_KEY Supabase secret.`
       )
