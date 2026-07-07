@@ -5,8 +5,8 @@ test.describe('Navigation', () => {
     await authenticatedPage.goto('leads')
     await expect(page.getByRole('heading', { name: 'Lead Discovery' })).toBeVisible()
 
-    await page.getByRole('link', { name: 'API Sources' }).click()
-    await expect(page.getByRole('heading', { name: 'API Sources' })).toBeVisible()
+    await page.getByRole('link', { name: 'Lead External Sources' }).click()
+    await expect(page.getByRole('heading', { name: 'Lead External Sources' })).toBeVisible()
 
     await page.getByRole('link', { name: 'Script Generator' }).click()
     await expect(page.getByRole('heading', { name: 'Script Generator' })).toBeVisible()
