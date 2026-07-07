@@ -21,6 +21,16 @@ interface AIRequest {
   apiKey?: string
 }
 
+class ProviderError extends Error {
+  status: number
+  providerBody?: string
+  constructor(status: number, message: string, providerBody?: string) {
+    super(message)
+    this.status = status
+    this.providerBody = providerBody
+  }
+}
+
 const SYSTEM_PROMPT = `You are a B2B sales intelligence assistant for CES, an IT infrastructure consultancy.
 Analyze the provided lead and return ONLY a JSON object (no markdown fences) with this exact shape:
 {
@@ -62,6 +72,17 @@ function stripJson(text: string): string {
   return text.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim()
 }
 
+function parseProviderError(body: string, provider: string): { message: string; retryAfter?: number } {
+  try {
+    const parsed = JSON.parse(body)
+    const msg = parsed?.error?.message || parsed?.error?.code || body
+    const retryAfter = Number(parsed?.error?.metadata?.retry_after_seconds)
+    return { message: `${provider}: ${msg}`, retryAfter: Number.isFinite(retryAfter) ? retryAfter : undefined }
+  } catch {
+    return { message: `${provider}: ${body}` }
+  }
+}
+
 async function callOpenRouter(apiKey: string, model: string, messages: unknown[]) {
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -75,15 +96,27 @@ async function callOpenRouter(apiKey: string, model: string, messages: unknown[]
   })
   if (!res.ok) {
     const body = await res.text()
+    const { message, retryAfter } = parseProviderError(body, 'OpenRouter')
+    if (res.status === 429) {
+      throw new ProviderError(
+        429,
+        retryAfter
+          ? `OpenRouter rate limit hit. Retry in ${retryAfter} seconds, switch to a non-free model, or add a small credit balance at openrouter.ai/settings.`
+          : `OpenRouter rate limit hit. Switch to a non-free model or add a small credit balance at openrouter.ai/settings.`,
+        body
+      )
+    }
     if (res.status === 404 && body.includes('No endpoints found')) {
-      throw new Error(
-        `OpenRouter model "${model}" is not available. Choose a different model in the Intelligence modal.`
+      throw new ProviderError(
+        404,
+        `OpenRouter model "${model}" is not available. Choose a different model in the Intelligence modal.`,
+        body
       )
     }
     if (res.status === 401) {
-      throw new Error('OpenRouter API key is invalid or missing.')
+      throw new ProviderError(401, 'OpenRouter API key is invalid or missing.', body)
     }
-    throw new Error(`OpenRouter ${res.status}: ${body}`)
+    throw new ProviderError(res.status, message, body)
   }
   const data = await res.json()
   return stripJson(data.choices?.[0]?.message?.content || '')
@@ -100,8 +133,9 @@ async function callOpenAI(apiKey: string, model: string, messages: unknown[]) {
   })
   if (!res.ok) {
     const body = await res.text()
-    if (res.status === 401) throw new Error('OpenAI API key is invalid or missing.')
-    throw new Error(`OpenAI ${res.status}: ${body}`)
+    const { message } = parseProviderError(body, 'OpenAI')
+    if (res.status === 401) throw new ProviderError(401, 'OpenAI API key is invalid or missing.', body)
+    throw new ProviderError(res.status, message, body)
   }
   const data = await res.json()
   return stripJson(data.choices?.[0]?.message?.content || '')
@@ -119,8 +153,9 @@ async function callAnthropic(apiKey: string, model: string, messages: unknown[])
   })
   if (!res.ok) {
     const body = await res.text()
-    if (res.status === 401) throw new Error('Anthropic API key is invalid or missing.')
-    throw new Error(`Anthropic ${res.status}: ${body}`)
+    const { message } = parseProviderError(body, 'Anthropic')
+    if (res.status === 401) throw new ProviderError(401, 'Anthropic API key is invalid or missing.', body)
+    throw new ProviderError(res.status, message, body)
   }
   const data = await res.json()
   return stripJson(data.content?.[0]?.text || '')
@@ -185,13 +220,15 @@ async function resolveApiKey(
       .select('ai_keys')
       .eq('id', 'global')
       .single()
-    if (!error && data?.ai_keys) {
+    if (error) {
+      console.error('ces_settings read error:', error.message)
+    } else if (data?.ai_keys) {
       const keys = data.ai_keys as Record<string, string>
       const key = keys[`${req.provider}_key`]
       if (key) return key
     }
-  } catch {
-    // Ignore and fall through to env secrets.
+  } catch (err) {
+    console.error('ces_settings exception:', err)
   }
 
   // 3. Server-side secrets.
@@ -199,55 +236,61 @@ async function resolveApiKey(
 }
 
 serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-  if (req.method !== 'POST') return errorResponse('Method not allowed', 405)
-
-  let body: AIRequest
   try {
-    body = await req.json()
-  } catch {
-    return errorResponse('Invalid JSON body')
-  }
+    if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+    if (req.method !== 'POST') return errorResponse('Method not allowed', 405)
 
-  if (!body.provider || !body.model || !body.lead) {
-    return errorResponse('Missing provider, model, or lead')
-  }
+    let body: AIRequest
+    try {
+      body = await req.json()
+    } catch {
+      return errorResponse('Invalid JSON body')
+    }
 
-  const useMock = Deno.env.get('AI_MOCK_MODE') === 'true'
-  if (useMock) {
-    return jsonResponse(mockResponse(body))
-  }
+    if (!body.provider || !body.model || !body.lead) {
+      return errorResponse('Missing provider, model, or lead')
+    }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { persistSession: false },
-  })
+    const useMock = Deno.env.get('AI_MOCK_MODE') === 'true'
+    if (useMock) {
+      return jsonResponse(mockResponse(body))
+    }
 
-  const apiKey = await resolveApiKey(body, supabaseAdmin)
-  if (!apiKey) {
-    return errorResponse(
-      `API key not configured for ${body.provider}. Ask an admin to add it in Settings → AI Engine or set the ${body.provider.toUpperCase()}_API_KEY Supabase secret.`,
-      500
-    )
-  }
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    })
 
-  const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: buildUserMessage(body) },
-  ]
+    const apiKey = await resolveApiKey(body, supabaseAdmin)
+    if (!apiKey) {
+      return errorResponse(
+        `API key not configured for ${body.provider}. Ask an admin to add it in Settings → AI Engine or set the ${body.provider.toUpperCase()}_API_KEY Supabase secret.`,
+        500
+      )
+    }
 
-  try {
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: buildUserMessage(body) },
+    ]
+
     let raw = ''
     if (body.provider === 'openrouter') raw = await callOpenRouter(apiKey, body.model, messages)
     else if (body.provider === 'openai') raw = await callOpenAI(apiKey, body.model, messages)
     else if (body.provider === 'anthropic') raw = await callAnthropic(apiKey, body.model, messages)
     else return errorResponse('Unknown provider')
 
-    const parsed = JSON.parse(raw)
-    return jsonResponse(parsed)
+    try {
+      const parsed = JSON.parse(raw)
+      return jsonResponse(parsed)
+    } catch {
+      return errorResponse(`Provider returned invalid JSON: ${raw.slice(0, 500)}`, 502)
+    }
   } catch (err) {
+    const status = err instanceof ProviderError ? err.status : 500
     const message = err instanceof Error ? err.message : 'AI request failed'
-    return errorResponse(message, 502)
+    console.error('ai-proxy unhandled error:', err)
+    return errorResponse(message, status)
   }
 })

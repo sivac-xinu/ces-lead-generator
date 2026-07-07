@@ -213,6 +213,25 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
           </div>
         )}
 
+        {provider === 'openrouter' && model.endsWith(':free') && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+            <p className="font-medium">Free OpenRouter models are often rate-limited</p>
+            <p className="mt-1">
+              If you see a rate-limit error, wait a few seconds and retry, add a small credit
+              balance at{' '}
+              <a
+                href="https://openrouter.ai/settings"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium underline"
+              >
+                openrouter.ai/settings
+              </a>
+              , or switch to a non-free model.
+            </p>
+          </div>
+        )}
+
         <Button variant="primary" onClick={run} loading={loading} className="w-full">
           {loading ? 'Analyzing...' : 'Run Intelligence'}
         </Button>

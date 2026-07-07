@@ -2,10 +2,28 @@
 
 Run these SQL statements in the Supabase SQL Editor when setting up or updating the v2 application.
 
-## Add sales_rep column to leads
+## Fix leads table schema for v2
+
+The v2 application expects these columns on `public.leads`. Run this once to add any that are missing.
 
 ```sql
-alter table public.leads add column if not exists sales_rep text;
+alter table public.leads
+  add column if not exists employees int,
+  add column if not exists sales_rep text,
+  add column if not exists assigned_rep text,
+  add column if not exists imported_by text,
+  add column if not exists company_source text,
+  add column if not exists icp text,
+  add column if not exists tier text,
+  add column if not exists notes text;
+```
+
+If your existing data uses `assigned_rep` and you want to keep it in sync with the new `sales_rep` column, also run:
+
+```sql
+update public.leads
+set sales_rep = assigned_rep
+where sales_rep is null and assigned_rep is not null;
 ```
 
 ## Create pain_point_catalog table

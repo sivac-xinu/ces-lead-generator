@@ -69,6 +69,8 @@ export interface DbLead {
   company_source?: string
   status?: string
   sales_rep?: string
+  assigned_rep?: string
+  notes?: string
   created_at?: string
   updated_at?: string
   user_id?: string
