@@ -31,6 +31,7 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   const [result, setResult] = useState<IntelligenceResult | null>(null)
   const [selectedIcp, setSelectedIcp] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [usedFallback, setUsedFallback] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const updateLead = useUpdateLead()
   const { showToast } = useUIStore()
@@ -42,15 +43,26 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
 
   const run = async () => {
     setLoading(true)
+    setUsedFallback(false)
     try {
       let res: IntelligenceResult
+      let fallback = false
       if (provider === 'local') {
         res = deepInferAll(lead)
       } else {
-        res = await runAIIntelligence(provider, model, depth, lead)
+        const aiRes = await runAIIntelligence(provider, model, depth, lead)
+        res = aiRes.result
+        fallback = aiRes.fallback
       }
       setResult(res)
+      setUsedFallback(fallback)
       setSelectedIcp(res.icp || res.icp_options[0]?.value || null)
+      if (fallback) {
+        showToast(
+          'AI proxy is not deployed — returned local-rule results instead. Deploy ai-proxy to use cloud providers.',
+          'error'
+        )
+      }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'AI analysis failed', 'error')
     } finally {
@@ -181,6 +193,22 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
         <Button variant="primary" onClick={run} loading={loading} className="w-full">
           {loading ? 'Analyzing...' : 'Run Intelligence'}
         </Button>
+
+        {usedFallback && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <p className="font-medium">AI proxy is not deployed</p>
+            <p className="mt-1">
+              Results were generated with Local Rules instead. To use {provider}, deploy the Edge
+              Function:
+            </p>
+            <pre className="mt-2 overflow-x-auto rounded bg-amber-100 p-2 text-xs">
+              npx supabase functions deploy ai-proxy
+            </pre>
+            <p className="mt-2">
+              Or switch to <strong>Local Rules</strong> to avoid this warning.
+            </p>
+          </div>
+        )}
 
         {result && (
           <div className="space-y-4 pt-2">
