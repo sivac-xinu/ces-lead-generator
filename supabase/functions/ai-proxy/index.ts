@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders, errorResponse, jsonResponse } from '../_shared/cors.ts'
 
 interface LeadContext {
@@ -151,6 +152,33 @@ function mockResponse(req: AIRequest): object {
   }
 }
 
+async function resolveApiKey(
+  req: AIRequest,
+  supabaseAdmin: ReturnType<typeof createClient>
+): Promise<string | undefined> {
+  // 1. Explicit per-request override (legacy / power-user).
+  if (req.apiKey) return req.apiKey
+
+  // 2. Admin-configured keys in ces_settings.
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('ces_settings')
+      .select('ai_keys')
+      .eq('id', 'global')
+      .single()
+    if (!error && data?.ai_keys) {
+      const keys = data.ai_keys as Record<string, string>
+      const key = keys[`${req.provider}_key`]
+      if (key) return key
+    }
+  } catch {
+    // Ignore and fall through to env secrets.
+  }
+
+  // 3. Server-side secrets.
+  return Deno.env.get(`${req.provider.toUpperCase()}_API_KEY`)
+}
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return errorResponse('Method not allowed', 405)
@@ -171,9 +199,18 @@ serve(async (req: Request) => {
     return jsonResponse(mockResponse(body))
   }
 
-  const apiKey = body.apiKey || Deno.env.get(`${body.provider.toUpperCase()}_API_KEY`)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { persistSession: false },
+  })
+
+  const apiKey = await resolveApiKey(body, supabaseAdmin)
   if (!apiKey) {
-    return errorResponse(`API key not configured for ${body.provider}. Add it in Settings → AI Engine or set the ${body.provider.toUpperCase()}_API_KEY Supabase secret.`, 500)
+    return errorResponse(
+      `API key not configured for ${body.provider}. Ask an admin to add it in Settings → AI Engine or set the ${body.provider.toUpperCase()}_API_KEY Supabase secret.`,
+      500
+    )
   }
 
   const messages = [

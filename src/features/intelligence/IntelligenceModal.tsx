@@ -8,7 +8,8 @@ import { deepInferAll } from '@/data/inference'
 import { useUpdateLead } from '@/hooks/useLeads'
 import { useUIStore } from '@/store/uiStore'
 import { AISettingsModal } from './AISettingsModal'
-import { useAIConfigStore } from '@/store/aiConfigStore'
+import { useAuth } from '@/features/auth/AuthProvider'
+import { useAISettings } from '@/hooks/useAISettings'
 import type { AIProvider, IcpOption, IntelligenceResult, Lead } from '@/types'
 
 interface IntelligenceModalProps {
@@ -36,9 +37,16 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   const [settingsOpen, setSettingsOpen] = useState(false)
   const updateLead = useUpdateLead()
   const { showToast } = useUIStore()
-  const hasKey = useAIConfigStore((s) =>
-    provider === 'local' ? true : !!s.getKey(provider)
-  )
+  const { isAdmin } = useAuth()
+  const { data: adminKeys } = useAISettings()
+  function getAdminKey(p: AIProvider): string | undefined {
+    if (!adminKeys) return undefined
+    if (p === 'openrouter') return adminKeys.openrouter_key
+    if (p === 'openai') return adminKeys.openai_key
+    if (p === 'anthropic') return adminKeys.anthropic_key
+    return undefined
+  }
+  const hasKey = provider === 'local' || !!getAdminKey(provider)
 
   if (!lead) return null
 
@@ -190,14 +198,18 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
         {provider !== 'local' && !hasKey && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
             No {provider} API key configured.{' '}
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              className="font-medium text-ces-orange hover:underline"
-            >
-              Add key in AI Settings
-            </button>{' '}
-            or the server-side key will be used if available.
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                className="font-medium text-ces-orange hover:underline"
+              >
+                Add key in AI Settings
+              </button>
+            ) : (
+              'Ask an admin to add it in Settings → AI Engine.'
+            )}{' '}
+            A server-side Supabase secret also works if available.
           </div>
         )}
 
@@ -290,7 +302,7 @@ npx supabase functions deploy ai-proxy`}
           </div>
         )}
       </div>
-      <AISettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <AISettingsModal key={settingsOpen ? 'open' : 'closed'} open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </Modal>
   )
 }

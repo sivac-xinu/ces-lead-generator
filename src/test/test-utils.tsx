@@ -2,6 +2,18 @@ import { render as rtlRender, type RenderOptions, screen } from '@testing-librar
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import type { ReactElement, ReactNode } from 'react'
+import { AuthContext, type AuthContextValue } from '@/features/auth/AuthProvider'
+
+const mockAuthContext: AuthContextValue = {
+  user: { id: 'test-user', email: 'test@example.com', role: 'admin', approved: true },
+  session: true,
+  loading: false,
+  isAdmin: true,
+  signIn: vi.fn(),
+  signUp: vi.fn(),
+  signOut: vi.fn(),
+  resetPassword: vi.fn(),
+}
 
 export function getControlByLabel(labelText: string): HTMLElement {
   const label = screen.getByText(labelText, { selector: 'label' })
@@ -42,7 +54,9 @@ export function renderWithProviders(ui: ReactElement, options: ProvidersOptions 
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+        <AuthContext.Provider value={mockAuthContext}>
+          <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+        </AuthContext.Provider>
       </QueryClientProvider>
     )
   }

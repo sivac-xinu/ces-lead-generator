@@ -26,7 +26,42 @@ create policy "Allow all" on public.pain_point_catalog
   for all using (true) with check (true);
 ```
 
+## Create ces_settings table for admin AI keys
+
+```sql
+create table if not exists public.ces_settings (
+  id text primary key default 'global',
+  ai_keys jsonb default '{}'::jsonb,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+alter table public.ces_settings enable row level security;
+
+create policy "Admin full access" on public.ces_settings
+  for all using (
+    exists (
+      select 1 from public.profiles
+      where id = auth.uid() and role = 'admin'
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.profiles
+      where id = auth.uid() and role = 'admin'
+    )
+  );
+
+create policy "Authenticated read ai_keys" on public.ces_settings
+  for select using (auth.role() = 'authenticated');
+
+-- Insert default row
+insert into public.ces_settings (id, ai_keys)
+values ('global', '{}'::jsonb)
+on conflict (id) do nothing;
+```
+
 ## Existing tables (from v1)
 
 The v2 app reuses the existing Supabase tables: `leads`, `call_logs`, `solutions`, `profiles`, and `audit_log`.
-No changes are required to those tables except for the migration above.
+No changes are required to those tables except for the migrations above.

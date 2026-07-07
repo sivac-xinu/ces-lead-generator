@@ -23,7 +23,7 @@ interface AuthContextValue {
   resetPassword: (email: string) => Promise<{ error?: Error }>
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined)
+export const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 function getBypassUser(): UserProfile | null {
   // The E2E bypass requires both the build-time env flag and a runtime localStorage

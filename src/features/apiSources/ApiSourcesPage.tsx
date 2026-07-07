@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { searchZoomInfoCompanies, type ZoomInfoLeadPartial } from '@/lib/zoominfo'
+import { useAuth } from '@/features/auth/AuthProvider'
 import { useCreateLead } from '@/hooks/useLeads'
 import { useUIStore } from '@/store/uiStore'
-import { inferITType } from '@/utils/lead'
+import { inferICP, inferITType, inferTier } from '@/utils/lead'
 import type { Lead } from '@/types'
 
 type Tab = 'zoominfo' | 'clearbit'
@@ -15,10 +16,11 @@ interface ClearbitSuggestion {
   logo: string
 }
 
-function buildLeadFromZoomInfo(result: ZoomInfoLeadPartial): Partial<Lead> {
+function buildLeadFromZoomInfo(result: ZoomInfoLeadPartial, salesRep: string): Partial<Lead> {
+  const industry = result.industry || 'Unknown'
   return {
     company: result.company,
-    industry: result.industry || 'Unknown',
+    industry,
     employees: result.employees,
     website: result.website,
     location: result.location,
@@ -28,18 +30,23 @@ function buildLeadFromZoomInfo(result: ZoomInfoLeadPartial): Partial<Lead> {
     contact_phone: result.contact_phone,
     current_infra: result.current_infra,
     annual_it_budget: result.annual_it_budget,
-    it_type: inferITType(result.industry),
+    it_type: inferITType(industry),
+    tier: inferTier(result.employees),
+    icp: inferICP(result.employees),
     pain_points: [],
     imported: true,
     imported_by: 'ZoomInfo',
     company_source: 'ZoomInfo Search',
+    sales_rep: salesRep || undefined,
+    status: 'New',
   }
 }
 
-function buildLeadFromClearbit(result: ClearbitSuggestion): Partial<Lead> {
+function buildLeadFromClearbit(result: ClearbitSuggestion, salesRep: string): Partial<Lead> {
   return {
     company: result.name,
     website: result.domain,
+    linkedin_url: result.domain,
     industry: 'Unknown',
     it_type: 'Unknown',
     pain_points: [],
@@ -48,6 +55,8 @@ function buildLeadFromClearbit(result: ClearbitSuggestion): Partial<Lead> {
     imported: true,
     imported_by: 'Clearbit',
     company_source: result.domain,
+    sales_rep: salesRep || undefined,
+    status: 'New',
   }
 }
 
@@ -65,8 +74,10 @@ export function ApiSourcesPage() {
   const [clearbitLoading, setClearbitLoading] = useState(false)
   const [clearbitError, setClearbitError] = useState<string | null>(null)
 
+  const { user } = useAuth()
   const createLead = useCreateLead()
   const { showToast } = useUIStore()
+  const salesRep = user?.email ?? ''
 
   const handleTestZoomInfo = async () => {
     setZoomLoading(true)
@@ -89,7 +100,7 @@ export function ApiSourcesPage() {
 
   const handleImportZoomInfo = async (result: ZoomInfoLeadPartial) => {
     try {
-      await createLead.mutateAsync(buildLeadFromZoomInfo(result))
+      await createLead.mutateAsync(buildLeadFromZoomInfo(result, salesRep))
       showToast(`Imported ${result.company} from ZoomInfo`)
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to import lead', 'error')
@@ -119,7 +130,7 @@ export function ApiSourcesPage() {
 
   const handleImportClearbit = async (result: ClearbitSuggestion) => {
     try {
-      await createLead.mutateAsync(buildLeadFromClearbit(result))
+      await createLead.mutateAsync(buildLeadFromClearbit(result, salesRep))
       showToast(`Imported ${result.name} from Clearbit`)
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to import lead', 'error')

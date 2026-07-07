@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useLeads } from '@/hooks/useLeads'
+import { useLeads, useUpdateLead } from '@/hooks/useLeads'
 import {
   usePainPointCatalog,
   useCreatePainPoint,
@@ -24,6 +24,7 @@ interface UnifiedPainPoint {
   text: string
   source: 'lead' | 'manual'
   company?: string
+  leadId?: number
   theme: string
   tags: string[]
   catalogItem?: PainPointCatalogItem
@@ -46,12 +47,18 @@ export function PainPointsGlancePage() {
   const createItem = useCreatePainPoint()
   const updateItem = useUpdatePainPoint()
   const deleteItem = useDeletePainPoint()
+  const updateLead = useUpdateLead()
 
   const [groupBy, setGroupBy] = useState<GroupMode>('company')
   const [source, setSource] = useState<SourceFilter>('all')
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<PainPointCatalogItem | null>(null)
+  const [editingLeadPoint, setEditingLeadPoint] = useState<{
+    leadId: number
+    oldText: string
+    newText: string
+  } | null>(null)
   const [form, setForm] = useState({ text: '', theme: 'General', tags: '' })
 
   const isLoading = leadsLoading || catalogLoading
@@ -66,6 +73,7 @@ export function PainPointsGlancePage() {
             text: point,
             source: 'lead',
             company: lead.company,
+            leadId: lead.id,
             theme: detectTheme(point),
             tags: [],
           })
@@ -153,6 +161,22 @@ export function PainPointsGlancePage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to remove this pain point?')) return
     await deleteItem.mutateAsync(id)
+  }
+
+  const startEditLeadPoint = (item: UnifiedPainPoint) => {
+    if (!item.leadId) return
+    setEditingLeadPoint({ leadId: item.leadId, oldText: item.text, newText: item.text })
+  }
+
+  const saveLeadPoint = async () => {
+    if (!editingLeadPoint) return
+    const lead = leads.find((l) => l.id === editingLeadPoint.leadId)
+    if (!lead) return
+    const updated = lead.pain_points.map((p) =>
+      p === editingLeadPoint.oldText ? editingLeadPoint.newText.trim() : p
+    )
+    await updateLead.mutateAsync({ id: lead.id, pain_points: updated })
+    setEditingLeadPoint(null)
   }
 
   if (isLoading) {
@@ -281,52 +305,87 @@ create policy "Allow all" on public.pain_point_catalog
               </div>
             </div>
             <div className="space-y-2">
-              {group.items.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-ces-border bg-white px-3 py-2 text-sm"
-                >
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span>{item.text}</span>
-                      {item.source === 'manual' ? (
-                        <Badge variant="default" className="shrink-0">
-                          <User className="mr-1 h-3 w-3" /> Manual
-                        </Badge>
+              {group.items.map((item, i) => {
+                const isEditingLead =
+                  editingLeadPoint?.leadId === item.leadId &&
+                  editingLeadPoint?.oldText === item.text
+
+                return (
+                  <div
+                    key={i}
+                    className="flex items-start justify-between gap-3 rounded-lg border border-ces-border bg-white px-3 py-2 text-sm"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      {isEditingLead ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editingLeadPoint.newText}
+                            onChange={(e) =>
+                              setEditingLeadPoint((prev) =>
+                                prev ? { ...prev, newText: e.target.value } : null
+                              )
+                            }
+                            className="text-sm"
+                          />
+                          <Button size="sm" variant="primary" onClick={saveLeadPoint}>
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingLeadPoint(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
                       ) : (
-                        <Badge variant="industry" className="shrink-0">
-                          Lead
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span>{item.text}</span>
+                          {item.source === 'manual' ? (
+                            <Badge variant="default" className="shrink-0">
+                              <User className="mr-1 h-3 w-3" /> Manual
+                            </Badge>
+                          ) : (
+                            <Badge variant="industry" className="shrink-0">
+                              Lead
+                            </Badge>
+                          )}
+                        </div>
                       )}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {groupBy === 'theme' && item.source === 'lead' && item.company && (
+                          <Badge variant="industry">{item.company}</Badge>
+                        )}
+                        <Badge variant="default">{item.theme}</Badge>
+                        {item.tags.map((tag) => (
+                          <Badge key={tag} variant="default">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {groupBy === 'theme' && item.source === 'lead' && item.company && (
-                        <Badge variant="industry">{item.company}</Badge>
-                      )}
-                      <Badge variant="default">{item.theme}</Badge>
-                      {item.tags.map((tag) => (
-                        <Badge key={tag} variant="default">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  {item.source === 'manual' && item.catalogItem && (
-                    <div className="flex shrink-0 gap-1">
-                      <Button size="sm" variant="secondary" onClick={() => openEdit(item.catalogItem!)}>
+                    {item.source === 'manual' && item.catalogItem && !isEditingLead && (
+                      <div className="flex shrink-0 gap-1">
+                        <Button size="sm" variant="secondary" onClick={() => openEdit(item.catalogItem!)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleDelete(item.catalogItem!.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
+                    {item.source === 'lead' && item.leadId && !isEditingLead && (
+                      <Button size="sm" variant="secondary" onClick={() => startEditLeadPoint(item)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleDelete(item.catalogItem!.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         ))}

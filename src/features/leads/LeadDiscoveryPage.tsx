@@ -6,6 +6,7 @@ import { Select } from '@/components/ui/Select'
 import { LeadCard } from './LeadCard'
 import { IntelligenceModal } from '@/features/intelligence/IntelligenceModal'
 import { CsvImportModal } from '@/features/csv/CsvImportModal'
+import { AddLeadModal } from './AddLeadModal'
 import { useDeleteLead, useLeads } from '@/hooks/useLeads'
 import { useProfiles } from '@/hooks/useProfiles'
 import { useUIStore } from '@/store/uiStore'
@@ -45,6 +46,7 @@ export function LeadDiscoveryPage() {
 
   const [intelligenceLead, setIntelligenceLead] = useState<Lead | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [addLeadOpen, setAddLeadOpen] = useState(false)
 
   const filtered = useMemo(() => {
     const q = filters.search.toLowerCase()
@@ -96,9 +98,14 @@ export function LeadDiscoveryPage() {
           <h1 className="text-2xl font-bold">Lead Discovery</h1>
           <p className="text-ces-muted">Browse and filter IT infrastructure leads.</p>
         </div>
-        <Button variant="primary" onClick={() => setImportOpen(true)}>
-          Import CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setAddLeadOpen(true)}>
+            Add Lead
+          </Button>
+          <Button variant="primary" onClick={() => setImportOpen(true)}>
+            Import CSV
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-ces-border bg-ces-card p-4">
@@ -184,6 +191,7 @@ export function LeadDiscoveryPage() {
         onClose={() => setIntelligenceLead(null)}
       />
       <CsvImportModal open={importOpen} onClose={() => setImportOpen(false)} />
+      <AddLeadModal open={addLeadOpen} onClose={() => setAddLeadOpen(false)} />
     </div>
   )
 }

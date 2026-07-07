@@ -18,6 +18,14 @@ vi.mock('@/store/uiStore', () => ({
   useUIStore: vi.fn(),
 }))
 
+vi.mock('@/features/auth/AuthProvider', () => ({
+  useAuth: vi.fn(() => ({
+    user: { id: 'test-user', email: 'test@example.com', role: 'admin', approved: true },
+    isAdmin: true,
+    signOut: vi.fn(),
+  })),
+}))
+
 describe('ApiSourcesPage', () => {
   const mockMutateAsync = vi.fn()
   const mockShowToast = vi.fn()

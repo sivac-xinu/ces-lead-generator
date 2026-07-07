@@ -1,5 +1,4 @@
 import { supabase } from './supabase'
-import { useAIConfigStore } from '@/store/aiConfigStore'
 import { deepInferAll } from '@/data/inference'
 import type { AIProvider, IntelligenceResult, Lead } from '@/types'
 
@@ -43,15 +42,12 @@ export async function runAIIntelligence(
   lead: Lead,
   { fallbackToLocal = true }: { fallbackToLocal?: boolean } = {}
 ): Promise<AIIntelligenceResponse> {
-  const apiKey = provider === 'local' ? '' : useAIConfigStore.getState().getKey(provider)
-
   try {
     const { data, error } = await supabase.functions.invoke('ai-proxy', {
       body: {
         provider,
         model,
         depth,
-        apiKey,
         lead: {
           company: lead.company,
           industry: lead.industry,
@@ -84,9 +80,8 @@ export async function runAIIntelligence(
     }
 
     if (isMissingKeyError(err)) {
-      // Surface the missing-key error so the user knows to add/save a key.
       throw new Error(
-        `API key not configured for ${provider}. Add it in Settings → AI Engine and click Save, or set the ${provider.toUpperCase()}_API_KEY Supabase secret.`
+        `API key not configured for ${provider}. Ask an admin to add it in Settings → AI Engine or set the ${provider.toUpperCase()}_API_KEY Supabase secret.`
       )
     }
 
