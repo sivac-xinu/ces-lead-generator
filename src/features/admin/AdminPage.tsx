@@ -10,7 +10,7 @@ import type { UserProfile, UserRole } from '@/types'
 const PROFILES_QUERY_KEY = 'profiles'
 
 export function AdminPage() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, user } = useAuth()
   const qc = useQueryClient()
   const [error, setError] = useState<string | null>(null)
 
@@ -45,17 +45,24 @@ export function AdminPage() {
     )
   }
 
+  const deleteUserCompletely = async (id: string) => {
+    const { error } = await supabase.functions.invoke('admin-delete-user', {
+      body: { userId: id },
+    })
+    if (error) throw error
+  }
+
   const handleReject = async (id: string) => {
     if (!confirm('Are you sure you want to reject and remove this user?')) return
-    const { error: deleteError } = await supabase.from('profiles').delete().eq('id', id)
-    if (deleteError) {
-      setError(deleteError.message)
-      return
+    try {
+      await deleteUserCompletely(id)
+      qc.setQueryData<UserProfile[]>(
+        [PROFILES_QUERY_KEY],
+        (prev) => prev?.filter((p) => p.id !== id) ?? []
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove user')
     }
-    qc.setQueryData<UserProfile[]>(
-      [PROFILES_QUERY_KEY],
-      (prev) => prev?.filter((p) => p.id !== id) ?? []
-    )
   }
 
   const handleRoleChange = async (id: string, role: UserRole) => {
@@ -72,15 +79,15 @@ export function AdminPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this user? This cannot be undone.')) return
-    const { error: deleteError } = await supabase.from('profiles').delete().eq('id', id)
-    if (deleteError) {
-      setError(deleteError.message)
-      return
+    try {
+      await deleteUserCompletely(id)
+      qc.setQueryData<UserProfile[]>(
+        [PROFILES_QUERY_KEY],
+        (prev) => prev?.filter((p) => p.id !== id) ?? []
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete user')
     }
-    qc.setQueryData<UserProfile[]>(
-      [PROFILES_QUERY_KEY],
-      (prev) => prev?.filter((p) => p.id !== id) ?? []
-    )
   }
 
   if (isLoading) {
@@ -116,6 +123,7 @@ export function AdminPage() {
               <UserRow
                 key={profile.id}
                 profile={profile}
+                currentUserId={user?.id}
                 onApprove={handleApprove}
                 onReject={handleReject}
                 onRoleChange={handleRoleChange}
@@ -138,6 +146,7 @@ export function AdminPage() {
               <UserRow
                 key={profile.id}
                 profile={profile}
+                currentUserId={user?.id}
                 onApprove={handleApprove}
                 onReject={handleReject}
                 onRoleChange={handleRoleChange}
@@ -153,13 +162,15 @@ export function AdminPage() {
 
 interface UserRowProps {
   profile: UserProfile
+  currentUserId?: string
   onApprove: (id: string) => Promise<void>
   onReject: (id: string) => Promise<void>
   onRoleChange: (id: string, role: UserRole) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }
 
-function UserRow({ profile, onApprove, onReject, onRoleChange, onDelete }: UserRowProps) {
+function UserRow({ profile, currentUserId, onApprove, onReject, onRoleChange, onDelete }: UserRowProps) {
+  const isSelf = profile.id === currentUserId
   return (
     <div className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -190,7 +201,13 @@ function UserRow({ profile, onApprove, onReject, onRoleChange, onDelete }: UserR
           <option value="user">user</option>
           <option value="admin">admin</option>
         </Select>
-        <Button size="sm" variant="danger" onClick={() => onDelete(profile.id)}>
+        <Button
+          size="sm"
+          variant="danger"
+          onClick={() => onDelete(profile.id)}
+          disabled={isSelf}
+          title={isSelf ? 'You cannot delete your own account' : undefined}
+        >
           Delete
         </Button>
       </div>

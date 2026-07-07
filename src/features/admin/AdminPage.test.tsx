@@ -52,6 +52,9 @@ function setupSupabase() {
   const from = vi.fn().mockReturnValue(chain)
   vi.spyOn(supabaseModule, 'supabase', 'get').mockReturnValue({
     from,
+    functions: {
+      invoke: vi.fn().mockResolvedValue({ data: { success: true }, error: null }),
+    },
   } as unknown as typeof supabaseModule.supabase)
   return { from, chain, profiles }
 }
@@ -109,14 +112,16 @@ describe('AdminPage', () => {
     window.confirm = vi.fn(() => true)
     mockUseAuth(true)
     const { chain } = setupSupabase()
+    const invokeSpy = vi.spyOn(supabaseModule.supabase.functions, 'invoke')
     renderPage()
     await waitFor(() => {
       expect(screen.getByText('pending@example.com')).toBeInTheDocument()
     })
     fireEvent.click(screen.getByRole('button', { name: 'Reject' }))
     await waitFor(() => {
-      expect(chain.delete).toHaveBeenCalled()
+      expect(invokeSpy).toHaveBeenCalledWith('admin-delete-user', { body: { userId: 'p1' } })
     })
+    expect(chain.delete).not.toHaveBeenCalled()
   })
 
   it('changes a user role', async () => {
@@ -137,14 +142,16 @@ describe('AdminPage', () => {
     window.confirm = vi.fn(() => true)
     mockUseAuth(true)
     const { chain } = setupSupabase()
+    const invokeSpy = vi.spyOn(supabaseModule.supabase.functions, 'invoke')
     renderPage()
     await waitFor(() => {
       expect(screen.getByText('user@example.com')).toBeInTheDocument()
     })
     const deleteButtons = screen.getAllByRole('button', { name: 'Delete' })
-    fireEvent.click(deleteButtons[0])
+    fireEvent.click(deleteButtons[1])
     await waitFor(() => {
-      expect(chain.delete).toHaveBeenCalled()
+      expect(invokeSpy).toHaveBeenCalledWith('admin-delete-user', { body: { userId: 'p2' } })
     })
+    expect(chain.delete).not.toHaveBeenCalled()
   })
 })
