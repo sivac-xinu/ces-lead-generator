@@ -2,13 +2,39 @@ import { useState } from 'react'
 import { useAuth } from './AuthProvider'
 import { CESLogo } from '@/components/ui/CESLogo'
 
+function getInitialAuthState():
+  | { mode: 'signin' | 'signup' | 'reset'; message: string; error: string }
+  | undefined {
+  if (typeof window === 'undefined') return undefined
+  const raw = window.location.hash + window.location.search
+  const params = new URLSearchParams(raw.replace(/^#/, ''))
+  const type = params.get('type')
+  const callbackError = params.get('error')
+  const errorDescription = params.get('error_description')
+
+  if (callbackError) {
+    return { mode: 'signin', message: '', error: errorDescription || callbackError }
+  }
+  if (type === 'signup') {
+    return { mode: 'signin', message: 'Email confirmed! You can now sign in.', error: '' }
+  }
+  if (type === 'recovery') {
+    return { mode: 'reset', message: 'You can now set a new password.', error: '' }
+  }
+  if (type === 'magiclink') {
+    return { mode: 'signin', message: 'Magic link confirmed! You are being signed in.', error: '' }
+  }
+  return undefined
+}
+
 export function AuthPage() {
   const { signIn, signUp, resetPassword } = useAuth()
-  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin')
+  const initial = getInitialAuthState()
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>(initial?.mode ?? 'signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const [error, setError] = useState(initial?.error ?? '')
+  const [message, setMessage] = useState(initial?.message ?? '')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
