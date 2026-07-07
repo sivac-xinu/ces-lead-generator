@@ -12,7 +12,7 @@ const E2E_USER: UserProfile = {
   approved: true,
 }
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: UserProfile | null
   session: boolean
   loading: boolean
