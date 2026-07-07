@@ -1,5 +1,8 @@
 name: Deploy to GitHub Pages
 
+# IMPORTANT: Repository Settings -> Pages -> Source must be set to "GitHub Actions"
+# so this workflow controls the live site. Do not use "Deploy from a branch".
+
 on:
   push:
     branches: [v2]
