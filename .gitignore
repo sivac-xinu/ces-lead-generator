@@ -27,3 +27,6 @@ playwright/.cache/
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase CLI temp files
+supabase/.temp/
