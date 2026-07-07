@@ -67,6 +67,17 @@ export function AISettingsModal({ open, onClose }: AISettingsModalProps) {
           your browser and sent securely through the CES Supabase Edge Function. Leave a key blank
           to use the server-side configured key (if available) or mock mode.
         </p>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <p className="font-medium">Edge Function required</p>
+          <p className="mt-1">
+            Adding a key does not deploy the proxy. You must also deploy <code>ai-proxy</code> to
+            Supabase:
+          </p>
+          <pre className="mt-2 overflow-x-auto rounded bg-amber-100 p-2 text-xs">
+{`npx supabase login
+npx supabase functions deploy ai-proxy`}
+          </pre>
+        </div>
 
         {PROVIDER_CONFIGS.map((cfg) => (
           <div key={cfg.key}>

@@ -196,13 +196,15 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
 
         {usedFallback && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            <p className="font-medium">AI proxy is not deployed</p>
+            <p className="font-medium">AI proxy Edge Function is not deployed</p>
             <p className="mt-1">
-              Results were generated with Local Rules instead. To use {provider}, deploy the Edge
-              Function:
+              Adding an API key is not enough — the <code>ai-proxy</code> function code must also be
+              deployed to your Supabase project. Results were generated with Local Rules instead.
             </p>
+            <p className="mt-2 font-medium">Run these commands from the project folder:</p>
             <pre className="mt-2 overflow-x-auto rounded bg-amber-100 p-2 text-xs">
-              npx supabase functions deploy ai-proxy
+{`npx supabase login
+npx supabase functions deploy ai-proxy`}
             </pre>
             <p className="mt-2">
               Or switch to <strong>Local Rules</strong> to avoid this warning.
