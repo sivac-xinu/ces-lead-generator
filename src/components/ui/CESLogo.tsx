@@ -1,3 +1,5 @@
+import logoUrl from '/ces-logo.png'
+
 interface CESLogoProps {
   width?: number
   className?: string
@@ -6,7 +8,7 @@ interface CESLogoProps {
 export function CESLogo({ width = 120, className }: CESLogoProps) {
   return (
     <img
-      src="/ces-logo.png"
+      src={logoUrl}
       alt="CES logo"
       width={width}
       className={className}
