@@ -23,7 +23,7 @@ export const test = base.extend<TestFixtures>({
     await provide({
       goto: async (path = '') => {
         await page.goto(path)
-        await expect(page.getByText('CES', { exact: true })).toBeVisible()
+        await expect(page.getByAltText('CES logo')).toBeVisible()
       },
     })
   },
