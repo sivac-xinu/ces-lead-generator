@@ -56,7 +56,7 @@ describe('ApiSourcesPage', () => {
 
   it('renders the ZoomInfo tab by default with the credentials banner', () => {
     render(<ApiSourcesPage />)
-    expect(screen.getByRole('heading', { name: /API Sources/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Lead External Sources/i })).toBeInTheDocument()
     expect(screen.getByText(/ZoomInfo credentials required/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /ZoomInfo/i })).toBeEnabled()
     expect(screen.getByLabelText(/ZoomInfo Username/i)).toBeInTheDocument()

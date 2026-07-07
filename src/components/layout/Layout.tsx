@@ -8,7 +8,7 @@ import { BarChart3, Briefcase, LayoutDashboard, LogOut, Phone, Settings, Shield,
 const navItems = [
   { to: '/leads', label: 'Lead Discovery', icon: LayoutDashboard },
   { to: '/pain-points', label: 'Pain Points Glance', icon: Zap },
-  { to: '/apis', label: 'API Sources', icon: Briefcase },
+  { to: '/apis', label: 'Lead External Sources', icon: Briefcase },
   { to: '/script', label: 'Script Generator', icon: Phone },
   { to: '/tracker', label: 'Call Tracker', icon: BarChart3 },
   { to: '/solutions', label: 'Solutions', icon: Settings, admin: false },

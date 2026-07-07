@@ -156,7 +156,7 @@ export function ApiSourcesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">API Sources</h1>
+        <h1 className="text-2xl font-bold">Lead External Sources</h1>
         <p className="text-ces-muted">Connect ZoomInfo and Clearbit to enrich leads.</p>
       </div>
 
