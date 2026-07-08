@@ -27,7 +27,9 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - Signup confirmation callback handling + success message
 - Admin-only shared AI keys via `ces_settings` table
 - `admin-delete-user` Edge Function purges Supabase Auth user when admin deletes a user
-- Added `notes` column to user profile form and admin view
+- Added `first_name` and `last_name` to `profiles`; sign-up form collects names and stores them in auth metadata
+- `sales_rep` now defaults to the user's display name instead of raw email
+- Admin page shows display names and allows inline editing of first/last names
 
 ### AI Intelligence
 - Unified `ai-proxy` Edge Function for OpenRouter, OpenAI, and Claude
@@ -41,7 +43,7 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - **CSV import** — records `imported_by` as importer email, `company_source` as filename, groups rows by company
 - **ZoomInfo import** — creates lead + primary contact, tags `imported_by` as `'ZoomInfo'`
 - **Clearbit import** — creates company-only lead, contacts added later via UI
-- Sales rep assignment on all import paths
+- Sales rep assignment on all import paths uses the user's display name
 
 ### Security Hardening
 - Added Row Level Security (RLS) migration for all public tables (`leads`, `contacts`, `call_logs`, `solutions`, `profiles`, `audit_log`, `pain_point_catalog`, `ces_settings`)
@@ -69,7 +71,7 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - Renamed "API Sources" navigation/page to **Lead External Sources**
 
 ### Tests & Build
-- 133 unit/component tests passing
+- 139 unit/component tests passing
 - E2E tests passing
 - `lint`, `typecheck`, `build` all green
 - CI/CD via GitHub Actions on `v2` branch
@@ -105,4 +107,7 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - `/Users/staray/Documents/Projects/CES_Internal_Projects/Infra_Lead_Generator_v2/src/features/apiSources/ApiSourcesPage.tsx`
 - `/Users/staray/Documents/Projects/CES_Internal_Projects/Infra_Lead_Generator_v2/src/features/intelligence/IntelligenceModal.tsx`
 - `/Users/staray/Documents/Projects/CES_Internal_Projects/Infra_Lead_Generator_v2/src/types/index.ts`
+- `/Users/staray/Documents/Projects/CES_Internal_Projects/Infra_Lead_Generator_v2/src/utils/user.ts`
+- `/Users/staray/Documents/Projects/CES_Internal_Projects/Infra_Lead_Generator_v2/src/features/auth/AuthPage.tsx`
+- `/Users/staray/Documents/Projects/CES_Internal_Projects/Infra_Lead_Generator_v2/src/features/admin/AdminPage.tsx`
 - `/Users/staray/Documents/Projects/CES_Internal_Projects/Infra_Lead_Generator_v2/supabase/functions/ai-proxy/index.ts`
