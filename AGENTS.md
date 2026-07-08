@@ -22,7 +22,7 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - **ai-proxy 502 errors** — Edge Function now returns real provider status codes and messages (429 rate limit, 401 invalid key, etc.)
 - **Leads table schema mismatch** — documented and typed missing columns (`employees`, `sales_rep`, `imported_by`, `company_source`, `icp`, `tier`, `notes`)
 - **Import source label bug** — LeadCard was hardcoded to "LinkedIn Import"; now derives the correct label (Clearbit, ZoomInfo, CSV, Manual) from `company_source` / `imported_by`
-- **Lead Discovery filters** — Sales Rep filter now matches display names and emails; Size filter falls back to computed size bucket; "All Industrys" spelling corrected to "All Industries"
+- **Lead Discovery filters** — Sales Rep filter now matches display names and emails, includes every rep value found in leads, and falls back to computed size bucket; "All Industrys" spelling corrected to "All Industries"
 
 ### Auth & Admin
 - Branded auth page with CES logo
