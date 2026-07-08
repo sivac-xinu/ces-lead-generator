@@ -62,7 +62,7 @@ Analyze the provided lead and return ONLY a JSON object (no markdown fences) wit
   }
 }
 
-`icp_options` should be 2-4 specific, company-relevant ideal-customer-profile labels (e.g. "Enterprise Aerospace & Defense", "Satellite Communications", "Advanced Manufacturing", "Mid-Market Healthcare", "Cloud-Native SaaS") — not generic size+industry placeholders. Each option must combine the likely segment (Enterprise/Mid-Market/SMB) with a meaningful vertical or business unit relevant to the company. Use the research depth provided: "quick" returns 4-5 pain points and concise enrichment/research (1-2 sentences per field); "deep" returns 7-8 pain points with detailed enrichment and comprehensive research sections (3-5 sentences per field). Be specific, actionable, and sales-relevant.`
+The icp_options field should be 2-4 specific, company-relevant ideal-customer-profile labels (e.g. "Enterprise Aerospace & Defense", "Satellite Communications", "Advanced Manufacturing", "Mid-Market Healthcare", "Cloud-Native SaaS") — not generic size+industry placeholders. Each option must combine the likely segment (Enterprise/Mid-Market/SMB) with a meaningful vertical or business unit relevant to the company. Use the research depth provided: "quick" returns 4-5 pain points and concise enrichment/research (1-2 sentences per field); "deep" returns 7-8 pain points with detailed enrichment and comprehensive research sections (3-5 sentences per field). Be specific, actionable, and sales-relevant.`
 
 function buildUserMessage(req: AIRequest): string {
   const { lead, depth } = req
