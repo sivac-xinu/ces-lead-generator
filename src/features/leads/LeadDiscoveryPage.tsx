@@ -10,6 +10,8 @@ import { AddLeadModal } from './AddLeadModal'
 import { useDeleteLead, useLeads } from '@/hooks/useLeads'
 import { useProfiles } from '@/hooks/useProfiles'
 import { useUIStore } from '@/store/uiStore'
+import { displayName } from '@/utils/user'
+import { sizeBucket } from '@/utils/lead'
 import type { Lead } from '@/types'
 
 const industries = [
@@ -48,20 +50,44 @@ export function LeadDiscoveryPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [addLeadOpen, setAddLeadOpen] = useState(false)
 
+  const repOptions = useMemo(
+    () =>
+      profiles.map((p) => ({
+        value: displayName(p),
+        email: p.email,
+      })),
+    [profiles]
+  )
+
   const filtered = useMemo(() => {
     const q = filters.search.toLowerCase()
     return leads.filter((l) => {
       if (filters.industry && l.industry !== filters.industry) return false
       if (filters.itType && l.it_type !== filters.itType) return false
-      if (filters.icp && !l.icp?.startsWith(filters.icp)) return false
+      if (filters.icp && !l.icp?.toLowerCase().startsWith(filters.icp.toLowerCase())) return false
       if (filters.tier && l.tier !== filters.tier) return false
-      if (filters.size && l.size !== filters.size) return false
-      if (filters.salesRep && l.sales_rep !== filters.salesRep) return false
-      if (q && !l.company.toLowerCase().includes(q) && !l.contact_name.toLowerCase().includes(q))
+      if (filters.size) {
+        const leadSize = l.size && l.size !== '—' ? l.size : sizeBucket(l.employees)
+        if (leadSize !== filters.size) return false
+      }
+      if (filters.salesRep) {
+        const match = repOptions.find(
+          (p) => p.value === filters.salesRep || p.email === filters.salesRep
+        )
+        const leadRep = l.sales_rep
+        if (!leadRep) return false
+        if (match && leadRep !== match.value && leadRep !== match.email) return false
+        if (!match && leadRep !== filters.salesRep) return false
+      }
+      if (
+        q &&
+        !l.company.toLowerCase().includes(q) &&
+        !l.contact_name.toLowerCase().includes(q)
+      )
         return false
       return true
     })
-  }, [leads, filters])
+  }, [leads, filters, repOptions])
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to remove this lead?')) return
@@ -139,12 +165,20 @@ export function LeadDiscoveryPage() {
           onChange={(v) => setFilters((f) => ({ ...f, size: v }))}
           options={sizes}
         />
-        <FilterSelect
-          label="Sales Rep"
-          value={filters.salesRep}
-          onChange={(v) => setFilters((f) => ({ ...f, salesRep: v }))}
-          options={profiles.map((p) => p.email)}
-        />
+        <div className="min-w-[160px]">
+          <label className="label">Sales Rep</label>
+          <Select
+            value={filters.salesRep}
+            onChange={(e) => setFilters((f) => ({ ...f, salesRep: e.target.value }))}
+          >
+            <option value="">All</option>
+            {repOptions.map((p) => (
+              <option key={p.email} value={p.value}>
+                {p.value}
+              </option>
+            ))}
+          </Select>
+        </div>
         <div className="min-w-[200px] flex-1">
           <label className="label">Search</label>
           <Input
@@ -207,11 +241,12 @@ function FilterSelect({
   onChange: (v: string) => void
   options: string[]
 }) {
+  const placeholder = label === 'Industry' ? 'All Industries' : 'All'
   return (
     <div className="min-w-[140px]">
       <label className="label">{label}</label>
       <Select value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">All {label}s</option>
+        <option value="">{placeholder}</option>
         {options.map((o) => (
           <option key={o} value={o}>
             {o}
