@@ -354,6 +354,7 @@ npx supabase functions deploy ai-proxy`}
                 )}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <InfoBlock title="Recent Activities" content={result.research.recent_activities} />
+                  <InfoBlock title="Upcoming Activities / Events" content={result.research.upcoming_activities} />
                   <InfoBlock title="Key Drivers" content={result.research.key_drivers} />
                   <InfoBlock title="Industry Trends" content={result.research.industry_trends} />
                   <InfoBlock title="Likely Next Portfolio" content={result.research.next_portfolio} />

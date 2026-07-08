@@ -47,7 +47,8 @@ Analyze the provided lead and return ONLY a JSON object (no markdown fences) wit
   },
   "research": {
     "summary": "2-3 sentence executive summary the rep can read before a call",
-    "recent_activities": "Recent company news, funding, M&A, expansions, earnings highlights or strategic initiatives",
+    "recent_activities": "Recent company news, funding, M&A, expansions, earnings highlights or strategic initiatives (past 6-12 months)",
+    "upcoming_activities": "Known or likely upcoming programs, events, product launches, webinars, conferences, roadshows, hiring pushes, expansions or go-to-market initiatives",
     "key_drivers": "Business and technology drivers likely to create IT infrastructure spend",
     "industry_trends": "Relevant 2025-2026 trends for this industry",
     "next_portfolio": "Likely upcoming infrastructure/cyber/cloud projects",
@@ -206,6 +207,7 @@ function mockResponse(req: AIRequest): object {
     research: {
       summary: `${lead.company} is a ${icp} organisation evaluating IT modernisation and AI readiness.`,
       recent_activities: 'Evaluating IT modernisation and AI readiness initiatives.',
+      upcoming_activities: 'Likely planning cloud roadshows, security awareness programs, and AI pilot launches in the next quarter.',
       key_drivers: 'Cost optimisation, compliance, and competitive pressure.',
       industry_trends: 'AI adoption accelerating; infrastructure modernisation critical.',
       next_portfolio: 'Cloud migration, FinOps, and security posture improvement.',

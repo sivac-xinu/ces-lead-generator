@@ -176,6 +176,7 @@ export interface IntelligenceResult {
   research?: {
     summary?: string
     recent_activities?: string
+    upcoming_activities?: string
     key_drivers?: string
     industry_trends?: string
     next_portfolio?: string
