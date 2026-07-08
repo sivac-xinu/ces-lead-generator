@@ -61,8 +61,8 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - `useCreateLead` automatically creates primary contact record from lead contact fields
 - `AddLeadModal` supports adding multiple contacts with primary selection
 - CSV import groups rows by company → one lead with multiple contacts
-- `ContactsPanel` component in Intelligence modal for viewing/adding/deleting contacts
-- Intelligence analysis can target any selected contact
+- `ContactsModal` on Lead Discovery page for viewing/adding/deleting contacts per lead
+- Contacts modal supports manual multi-entry and CSV import
 - `LeadCard` shows "No contacts" prompt for company-only leads
 
 ### UI/UX
