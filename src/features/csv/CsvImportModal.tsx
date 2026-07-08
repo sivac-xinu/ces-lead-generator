@@ -281,7 +281,7 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
     if (!requiredMapped || rows.length === 0) return
 
     const fileName = file?.name ?? 'unknown.csv'
-    const importedBy = displayName(user) || user?.email || 'Unknown'
+    const importedBy = user?.email || 'Unknown'
     const assignedSalesRep = salesRep || importedBy
 
     // Group rows by company so multiple contacts for the same company become one lead.

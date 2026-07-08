@@ -10,8 +10,13 @@ describe('user utils', () => {
     expect(displayName({ first_name: 'Siva', email: 'siva@cesltd.com' })).toBe('Siva')
   })
 
-  it('displayName falls back to email when no names', () => {
-    expect(displayName({ email: 'siva@cesltd.com' })).toBe('siva@cesltd.com')
+  it('displayName derives name from email local part when no names', () => {
+    expect(displayName({ email: 'akbar.khan@cesltd.com' })).toBe('Akbar Khan')
+    expect(displayName({ email: 'jahnavi.avireni@cesltd.com' })).toBe('Jahnavi Avireni')
+  })
+
+  it('displayName falls back to raw email when name cannot be derived', () => {
+    expect(displayName({ email: 'info@cesltd.com' })).toBe('info@cesltd.com')
   })
 
   it('displayName returns empty string for null/undefined', () => {
@@ -23,7 +28,8 @@ describe('user utils', () => {
     expect(firstName({ first_name: 'Siva', email: 'siva@cesltd.com' })).toBe('Siva')
   })
 
-  it('firstName falls back to email local part', () => {
-    expect(firstName({ email: 'siva.chandra@cesltd.com' })).toBe('siva.chandra')
+  it('firstName derives first name from email local part', () => {
+    expect(firstName({ email: 'akbar.khan@cesltd.com' })).toBe('Akbar')
+    expect(firstName({ email: 'jahnavi.avireni@cesltd.com' })).toBe('Jahnavi')
   })
 })
