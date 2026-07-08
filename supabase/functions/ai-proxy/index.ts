@@ -183,7 +183,7 @@ async function callGemini(apiKey: string, model: string, messages: unknown[]) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: toGeminiContents(messages),
-      generationConfig: { temperature: 0.4, maxOutputTokens: 2000 },
+      generationConfig: { temperature: 0.4, maxOutputTokens: 8000, responseMimeType: 'application/json' },
     }),
   })
   if (!res.ok) {
