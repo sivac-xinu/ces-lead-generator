@@ -27,6 +27,20 @@ export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete }
     return match ? displayName(match) : lead.sales_rep
   })()
 
+  const importLabel = (() => {
+    if (!lead.imported) return null
+    const source = lead.company_source?.toLowerCase() ?? ''
+    if (source.includes('zoominfo')) return 'ZoomInfo Import'
+    if (source.includes('clearbit') || source.includes('.com') || source.includes('.io') || source.includes('.co')) return 'Clearbit Import'
+    if (source.endsWith('.csv')) return 'CSV Import'
+    const by = lead.imported_by?.toLowerCase() ?? ''
+    if (by === 'manual') return 'Manual Import'
+    if (by === 'zoominfo') return 'ZoomInfo Import'
+    if (by === 'clearbit') return 'Clearbit Import'
+    if (by.includes('@')) return 'CSV Import'
+    return lead.imported_by ? `${lead.imported_by} Import` : 'Imported'
+  })()
+
   return (
     <div className={cn('card', lead.imported && 'border-l-4 border-l-green-600')}>
       <div className="flex items-start justify-between">
@@ -36,7 +50,7 @@ export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete }
             {lead.location} · {lead.employees ? `${lead.employees.toLocaleString()} employees` : 'employees unknown'}
           </p>
         </div>
-        {lead.imported && <span className="text-xs font-medium text-green-700">LinkedIn Import</span>}
+        {importLabel && <span className="text-xs font-medium text-green-700">{importLabel}</span>}
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">

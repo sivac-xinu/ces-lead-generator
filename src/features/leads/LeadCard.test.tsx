@@ -53,8 +53,28 @@ describe('LeadCard', () => {
     expect(handlers.onDelete).toHaveBeenCalledWith(lead.id)
   })
 
-  it('shows LinkedIn import indicator when imported', () => {
-    renderWithProviders(<LeadCard lead={{ ...lead, imported: true }} {...handlers} />)
-    expect(screen.getByText(/LinkedIn Import/i)).toBeInTheDocument()
+  it('shows Clearbit import indicator when imported from Clearbit', () => {
+    renderWithProviders(
+      <LeadCard
+        lead={{ ...lead, imported: true, imported_by: 'Clearbit', company_source: 'clearbit.com' }}
+        {...handlers}
+      />
+    )
+    expect(screen.getByText(/Clearbit Import/i)).toBeInTheDocument()
+  })
+
+  it('shows CSV import indicator when imported from a CSV file', () => {
+    renderWithProviders(
+      <LeadCard
+        lead={{
+          ...lead,
+          imported: true,
+          imported_by: 'admin@example.com',
+          company_source: 'leads.csv',
+        }}
+        {...handlers}
+      />
+    )
+    expect(screen.getByText(/CSV Import/i)).toBeInTheDocument()
   })
 })
