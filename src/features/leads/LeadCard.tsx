@@ -4,7 +4,7 @@ import { cn } from '@/utils/cn'
 import { displayName } from '@/utils/user'
 import { useProfiles } from '@/hooks/useProfiles'
 import type { Lead } from '@/types'
-import { Brain, FileText, Phone, Trash2 } from 'lucide-react'
+import { Brain, FileText, Phone, Trash2, StickyNote } from 'lucide-react'
 
 interface LeadCardProps {
   lead: Lead
@@ -58,6 +58,13 @@ export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete }
         <Badge variant="industry">{lead.industry}</Badge>
         {lead.size && <Badge>{lead.size} emp</Badge>}
         {repDisplay && <Badge variant="industry">Rep: {repDisplay}</Badge>}
+        {lead.notes && (
+          <span title={lead.notes.slice(0, 120)}>
+            <Badge variant="default">
+              <StickyNote className="mr-1 h-3 w-3" /> Notes
+            </Badge>
+          </span>
+        )}
       </div>
 
       <div className="mt-3 text-sm">

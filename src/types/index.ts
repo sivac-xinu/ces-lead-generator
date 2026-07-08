@@ -54,6 +54,7 @@ export interface Lead {
   _source?: string
   status?: string
   sales_rep?: string
+  notes?: string
   created_at?: string
   updated_at?: string
   user_id?: string

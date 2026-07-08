@@ -106,6 +106,33 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
     }
   }
 
+  function buildNotes(): string {
+    if (!result) return ''
+    const lines: string[] = []
+    if (result.enrichment) {
+      lines.push(`Company Context: ${result.enrichment.company_context}`)
+      lines.push(`Key Challenges: ${result.enrichment.key_challenges}`)
+      lines.push(`Recommended Approach: ${result.enrichment.recommended_approach}`)
+    }
+    if (result.research) {
+      const r = result.research
+      if (r.summary) lines.push(`Summary: ${r.summary}`)
+      if (r.recent_activities) lines.push(`Recent Activities: ${r.recent_activities}`)
+      if (r.upcoming_activities) lines.push(`Upcoming Activities: ${r.upcoming_activities}`)
+      if (r.key_drivers) lines.push(`Key Drivers: ${r.key_drivers}`)
+      if (r.industry_trends) lines.push(`Industry Trends: ${r.industry_trends}`)
+      if (r.next_portfolio) lines.push(`Likely Next Portfolio: ${r.next_portfolio}`)
+      if (r.competitors) lines.push(`Competitors: ${r.competitors}`)
+      if (r.tech_stack) lines.push(`Tech Stack: ${r.tech_stack}`)
+      if (r.decision_makers) lines.push(`Decision Makers: ${r.decision_makers}`)
+      if (r.buying_triggers) lines.push(`Buying Triggers: ${r.buying_triggers}`)
+      if (r.talking_points) lines.push(`Talking Points: ${r.talking_points}`)
+      if (r.ces_entry_angle) lines.push(`CES Entry Angle: ${r.ces_entry_angle}`)
+      if (r.ces_support) lines.push(`How CES Can Support: ${r.ces_support}`)
+    }
+    return lines.join('\n\n')
+  }
+
   const applyAll = async () => {
     if (!result) return
     await updateLead.mutateAsync({
@@ -114,6 +141,7 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
       tier: result.tier,
       it_type: result.it_type,
       pain_points: result.pain_points,
+      notes: buildNotes(),
     })
     showToast(`Intelligence applied to ${lead.company}`)
     onClose()
