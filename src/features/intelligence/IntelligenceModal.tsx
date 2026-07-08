@@ -25,6 +25,7 @@ const PROVIDERS: { key: AIProvider; label: string; models: string[] }[] = [
   { key: 'openrouter', label: 'OpenRouter', models: ['meta-llama/llama-3.3-70b-instruct:free', 'google/gemma-4-26b-a4b-it:free'] },
   { key: 'openai', label: 'OpenAI', models: ['gpt-4o-mini', 'gpt-4o'] },
   { key: 'anthropic', label: 'Claude', models: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'] },
+  { key: 'gemini', label: 'Google Gemini', models: ['gemini-2.5-flash', 'gemini-2.5-pro'] },
 ]
 
 export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProps) {
@@ -48,6 +49,7 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
     if (p === 'openrouter') return adminKeys.openrouter_key
     if (p === 'openai') return adminKeys.openai_key
     if (p === 'anthropic') return adminKeys.anthropic_key
+    if (p === 'gemini') return adminKeys.gemini_key
     return undefined
   }
   const hasKey = provider === 'local' || !!getAdminKey(provider)

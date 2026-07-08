@@ -27,6 +27,11 @@ const PROVIDER_CONFIGS = [
     label: 'Anthropic API Key',
     help: 'Get a key at console.anthropic.com. Used for Claude models.',
   },
+  {
+    key: 'gemini_key' as const,
+    label: 'Google Gemini API Key',
+    help: 'Get a key at aistudio.google.com/app/apikey. Used for Gemini models.',
+  },
 ]
 
 export function AISettingsModal({ open, onClose }: AISettingsModalProps) {
@@ -39,6 +44,7 @@ export function AISettingsModal({ open, onClose }: AISettingsModalProps) {
     openrouter_key: savedKeys?.openrouter_key ?? '',
     openai_key: savedKeys?.openai_key ?? '',
     anthropic_key: savedKeys?.anthropic_key ?? '',
+    gemini_key: savedKeys?.gemini_key ?? '',
   }))
 
   const handleSave = async () => {
@@ -46,6 +52,7 @@ export function AISettingsModal({ open, onClose }: AISettingsModalProps) {
       openrouter_key: values.openrouter_key.trim() || undefined,
       openai_key: values.openai_key.trim() || undefined,
       anthropic_key: values.anthropic_key.trim() || undefined,
+      gemini_key: values.gemini_key.trim() || undefined,
     })
     onClose()
   }
@@ -135,7 +142,8 @@ export function AISettingsModal({ open, onClose }: AISettingsModalProps) {
           <pre className="mt-2 overflow-x-auto rounded bg-white p-2">
 {`npx supabase secrets set OPENROUTER_API_KEY=...
 npx supabase secrets set OPENAI_API_KEY=...
-npx supabase secrets set ANTHROPIC_API_KEY=...`}
+npx supabase secrets set ANTHROPIC_API_KEY=...
+npx supabase secrets set GEMINI_API_KEY=...`}
           </pre>
         </div>
       </div>

@@ -5,6 +5,7 @@ export interface AIProviderKeys {
   openrouter_key?: string
   openai_key?: string
   anthropic_key?: string
+  gemini_key?: string
 }
 
 const SETTINGS_ID = 'global'
@@ -38,6 +39,7 @@ export function useUpdateAISettings() {
         openrouter_key: keys.openrouter_key?.trim() || undefined,
         openai_key: keys.openai_key?.trim() || undefined,
         anthropic_key: keys.anthropic_key?.trim() || undefined,
+        gemini_key: keys.gemini_key?.trim() || undefined,
       }
       const { error } = await supabase.from('ces_settings').upsert(
         {

@@ -149,7 +149,7 @@ export interface AuditLogEntry {
   created_at?: string
 }
 
-export type AIProvider = 'local' | 'openrouter' | 'openai' | 'anthropic'
+export type AIProvider = 'local' | 'openrouter' | 'openai' | 'anthropic' | 'gemini'
 
 export interface AIConfig {
   provider: AIProvider

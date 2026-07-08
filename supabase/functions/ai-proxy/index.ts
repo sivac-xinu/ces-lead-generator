@@ -14,7 +14,7 @@ interface LeadContext {
 }
 
 interface AIRequest {
-  provider: 'openrouter' | 'openai' | 'anthropic'
+  provider: 'openrouter' | 'openai' | 'anthropic' | 'gemini'
   model: string
   depth: 'quick' | 'deep'
   lead: LeadContext
@@ -169,6 +169,35 @@ async function callAnthropic(apiKey: string, model: string, messages: unknown[])
   return stripJson(data.content?.[0]?.text || '')
 }
 
+function toGeminiContents(messages: unknown[]) {
+  return messages.map((m: { role: string; content: string }) => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }))
+}
+
+async function callGemini(apiKey: string, model: string, messages: unknown[]) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: toGeminiContents(messages),
+      generationConfig: { temperature: 0.4, maxOutputTokens: 2000 },
+    }),
+  })
+  if (!res.ok) {
+    const body = await res.text()
+    const { message } = parseProviderError(body, 'Gemini')
+    if (res.status === 400 && body.toLowerCase().includes('api key')) {
+      throw new ProviderError(401, 'Gemini API key is invalid or missing.', body)
+    }
+    throw new ProviderError(res.status, message, body)
+  }
+  const data = await res.json()
+  return stripJson(data.candidates?.[0]?.content?.parts?.[0]?.text || '')
+}
+
 function mockResponse(req: AIRequest): object {
   const { lead, depth } = req
   const emp = lead.employees ?? 0
@@ -295,6 +324,7 @@ serve(async (req: Request) => {
     if (body.provider === 'openrouter') raw = await callOpenRouter(apiKey, body.model, messages)
     else if (body.provider === 'openai') raw = await callOpenAI(apiKey, body.model, messages)
     else if (body.provider === 'anthropic') raw = await callAnthropic(apiKey, body.model, messages)
+    else if (body.provider === 'gemini') raw = await callGemini(apiKey, body.model, messages)
     else return errorResponse('Unknown provider')
 
     try {
