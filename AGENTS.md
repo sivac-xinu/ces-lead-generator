@@ -33,7 +33,7 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - Admin page shows display names and allows inline editing of first/last names
 
 ### AI Intelligence
-- Unified `ai-proxy` Edge Function for OpenRouter, OpenAI, and Claude
+- Unified `ai-proxy` Edge Function for OpenRouter, OpenAI, Claude, and Google Gemini
 - Reads shared admin keys from `ces_settings`, falls back to Supabase secrets
 - Local rule fallback via `deepInferAll` when cloud AI fails
 - Free-model rate-limit warning in Intelligence modal
