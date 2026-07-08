@@ -6,6 +6,7 @@ import { runAIIntelligence } from '@/lib/ai'
 import { cn } from '@/utils/cn'
 import { deepInferAll } from '@/data/inference'
 import { useUpdateLead } from '@/hooks/useLeads'
+import { sizeBucket } from '@/utils/lead'
 import { useUIStore } from '@/store/uiStore'
 import { AISettingsModal } from './AISettingsModal'
 import { useAuth } from '@/features/auth/AuthProvider'
@@ -135,8 +136,12 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
 
   const applyAll = async () => {
     if (!result) return
+    const employees = result.employees ?? lead.employees
     await updateLead.mutateAsync({
       id: lead.id,
+      industry: result.industry || lead.industry,
+      employees,
+      size: employees ? sizeBucket(employees) : lead.size,
       icp: selectedIcp || result.icp,
       tier: result.tier,
       it_type: result.it_type,
@@ -358,7 +363,12 @@ npx supabase functions deploy ai-proxy`}
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+              <InfoCard label="Industry" value={result.industry || lead.industry || '—'} />
+              <InfoCard
+                label="Employees"
+                value={result.employees ? result.employees.toLocaleString() : lead.employees?.toLocaleString() || '—'}
+              />
               <InfoCard label="Selected ICP" value={selectedIcp || '—'} />
               <InfoCard label="Inferred Tier" value={result.tier} />
               <InfoCard label="Inferred IT Type" value={result.it_type} />

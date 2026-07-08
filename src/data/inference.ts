@@ -745,6 +745,8 @@ export function deepInferAll(lead: Lead): IntelligenceResult {
   }
 
   return {
+    industry: lead.industry,
+    employees: lead.employees,
     icp: icp_options[0].value,
     icp_options,
     tier,

@@ -166,6 +166,8 @@ export interface IcpOption {
 }
 
 export interface IntelligenceResult {
+  industry?: string
+  employees?: number
   icp?: string
   icp_options: IcpOption[]
   tier: Tier
