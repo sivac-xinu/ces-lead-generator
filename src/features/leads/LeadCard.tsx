@@ -77,7 +77,7 @@ export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete, 
             {lead.contact_email && <p className="text-ces-muted">{lead.contact_email}</p>}
           </>
         ) : (
-          <p className="text-ces-muted">No contacts — open Intelligence to add contacts.</p>
+          <p className="text-ces-muted">No contacts — click Contacts to add them.</p>
         )}
       </div>
 
