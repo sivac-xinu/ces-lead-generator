@@ -31,7 +31,7 @@ class ProviderError extends Error {
   }
 }
 
-const SYSTEM_PROMPT = `You are a B2B sales intelligence assistant for CES, an IT infrastructure consultancy.
+const SYSTEM_PROMPT = `You are a senior B2B sales intelligence assistant for CES, an IT infrastructure consultancy.
 Analyze the provided lead and return ONLY a JSON object (no markdown fences) with this exact shape:
 {
   "icp_options": [
@@ -46,15 +46,22 @@ Analyze the provided lead and return ONLY a JSON object (no markdown fences) wit
     "recommended_approach": "..."
   },
   "research": {
-    "recent_activities": "...",
-    "key_drivers": "...",
-    "industry_trends": "...",
-    "next_portfolio": "...",
-    "ces_support": "..."
+    "summary": "2-3 sentence executive summary the rep can read before a call",
+    "recent_activities": "Recent company news, funding, M&A, expansions, earnings highlights or strategic initiatives",
+    "key_drivers": "Business and technology drivers likely to create IT infrastructure spend",
+    "industry_trends": "Relevant 2025-2026 trends for this industry",
+    "next_portfolio": "Likely upcoming infrastructure/cyber/cloud projects",
+    "ces_support": "Specific CES services that map to the lead's likely needs",
+    "competitors": "3-5 key competitors or peers",
+    "tech_stack": "Inferred current technology stack, cloud platforms, legacy systems",
+    "decision_makers": "Typical buying committee roles and titles to target",
+    "buying_triggers": "Signals or events that indicate an active buying window",
+    "talking_points": "3-5 conversation openers tailored to this company/contact",
+    "ces_entry_angle": "The single best way for CES to start a conversation"
   }
 }
 
-Use the research depth provided: "quick" returns 4-5 pain points and concise enrichment; "deep" returns 7-8 pain points with detailed enrichment and research sections.`
+Use the research depth provided: "quick" returns 4-5 pain points and concise enrichment/research (1-2 sentences per field); "deep" returns 7-8 pain points with detailed enrichment and comprehensive research sections (3-5 sentences per field). Be specific, actionable, and sales-relevant.`
 
 function buildUserMessage(req: AIRequest): string {
   const { lead, depth } = req
@@ -197,11 +204,18 @@ function mockResponse(req: AIRequest): object {
       recommended_approach: 'Start with a no-obligation infrastructure assessment.',
     },
     research: {
+      summary: `${lead.company} is a ${icp} organisation evaluating IT modernisation and AI readiness.`,
       recent_activities: 'Evaluating IT modernisation and AI readiness initiatives.',
       key_drivers: 'Cost optimisation, compliance, and competitive pressure.',
       industry_trends: 'AI adoption accelerating; infrastructure modernisation critical.',
       next_portfolio: 'Cloud migration, FinOps, and security posture improvement.',
       ces_support: 'Managed services, cloud migration, and AI-ready infrastructure.',
+      competitors: 'Peers in the same segment are investing in cloud migration and cybersecurity.',
+      tech_stack: 'Likely mix of on-premise legacy systems and early cloud adoption.',
+      decision_makers: 'CIO, CTO, VP of Infrastructure, Head of Security.',
+      buying_triggers: 'End-of-life hardware, compliance audits, cloud cost overruns.',
+      talking_points: '1) AI readiness assessment 2) Cloud cost optimisation 3) Security posture review 4) Legacy modernisation roadmap 5) Managed services overview.',
+      ces_entry_angle: 'Offer a no-obligation infrastructure assessment focused on AI readiness and cost optimisation.',
     },
   }
 }

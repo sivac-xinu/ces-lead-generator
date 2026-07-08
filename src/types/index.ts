@@ -174,11 +174,18 @@ export interface IntelligenceResult {
     recommended_approach: string
   }
   research?: {
-    recent_activities: string
-    key_drivers: string
-    industry_trends: string
-    next_portfolio: string
-    ces_support: string
+    summary?: string
+    recent_activities?: string
+    key_drivers?: string
+    industry_trends?: string
+    next_portfolio?: string
+    ces_support?: string
+    competitors?: string
+    tech_stack?: string
+    decision_makers?: string
+    buying_triggers?: string
+    talking_points?: string
+    ces_entry_angle?: string
   }
 }
 

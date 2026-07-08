@@ -343,6 +343,40 @@ npx supabase functions deploy ai-proxy`}
               </div>
             )}
 
+            {result.research && (
+              <div className="space-y-3 rounded-lg border border-ces-border bg-slate-50 p-4">
+                <h4 className="text-sm font-semibold text-ces-navy">Sales Research Snippet</h4>
+                {result.research.summary && (
+                  <div className="rounded-lg border border-ces-border bg-white p-3 text-sm leading-relaxed">
+                    <span className="font-medium text-ces-orange">At a glance:</span>{' '}
+                    {result.research.summary}
+                  </div>
+                )}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <InfoBlock title="Recent Activities" content={result.research.recent_activities} />
+                  <InfoBlock title="Key Drivers" content={result.research.key_drivers} />
+                  <InfoBlock title="Industry Trends" content={result.research.industry_trends} />
+                  <InfoBlock title="Likely Next Portfolio" content={result.research.next_portfolio} />
+                  <InfoBlock title="Competitors / Peers" content={result.research.competitors} />
+                  <InfoBlock title="Inferred Tech Stack" content={result.research.tech_stack} />
+                  <InfoBlock title="Decision Makers to Target" content={result.research.decision_makers} />
+                  <InfoBlock title="Buying Triggers" content={result.research.buying_triggers} />
+                </div>
+                {result.research.talking_points && (
+                  <InfoBlock title="Suggested Talking Points" content={result.research.talking_points} />
+                )}
+                {result.research.ces_entry_angle && (
+                  <div className="rounded-lg border border-ces-orange bg-orange-50 p-3 text-sm leading-relaxed">
+                    <span className="font-semibold text-ces-orange">Best CES Entry Angle:</span>{' '}
+                    {result.research.ces_entry_angle}
+                  </div>
+                )}
+                {result.research.ces_support && (
+                  <InfoBlock title="How CES Can Support" content={result.research.ces_support} />
+                )}
+              </div>
+            )}
+
             <div>
               <h4 className="text-sm font-semibold text-ces-navy">
                 Inferred Pain Points · {result.pain_points.length} identified
@@ -372,7 +406,8 @@ function InfoCard({ label, value }: { label: string; value: string }) {
   )
 }
 
-function InfoBlock({ title, content }: { title: string; content: string }) {
+function InfoBlock({ title, content }: { title: string; content?: string }) {
+  if (!content) return null
   return (
     <div className="rounded-lg border border-ces-border bg-ces-card p-3">
       <div className="text-sm font-semibold text-ces-navy">{title}</div>
