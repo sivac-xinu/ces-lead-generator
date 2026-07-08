@@ -35,7 +35,7 @@ const SYSTEM_PROMPT = `You are a senior B2B sales intelligence assistant for CES
 Analyze the provided lead and return ONLY a JSON object (no markdown fences) with this exact shape:
 {
   "icp_options": [
-    { "value": "Segment Industry", "confidence": "high|medium|low", "reasoning": "..." }
+    { "value": "Specific ICP label", "confidence": "high|medium|low", "reasoning": "..." }
   ],
   "tier": "Tier 1|Tier 2|Tier 3",
   "it_type": "Cloud|On-Premise|Hybrid|Unknown",
@@ -62,7 +62,7 @@ Analyze the provided lead and return ONLY a JSON object (no markdown fences) wit
   }
 }
 
-Use the research depth provided: "quick" returns 4-5 pain points and concise enrichment/research (1-2 sentences per field); "deep" returns 7-8 pain points with detailed enrichment and comprehensive research sections (3-5 sentences per field). Be specific, actionable, and sales-relevant.`
+`icp_options` should be 2-4 specific, company-relevant ideal-customer-profile labels (e.g. "Enterprise Aerospace & Defense", "Satellite Communications", "Advanced Manufacturing", "Mid-Market Healthcare", "Cloud-Native SaaS") — not generic size+industry placeholders. Each option must combine the likely segment (Enterprise/Mid-Market/SMB) with a meaningful vertical or business unit relevant to the company. Use the research depth provided: "quick" returns 4-5 pain points and concise enrichment/research (1-2 sentences per field); "deep" returns 7-8 pain points with detailed enrichment and comprehensive research sections (3-5 sentences per field). Be specific, actionable, and sales-relevant.`
 
 function buildUserMessage(req: AIRequest): string {
   const { lead, depth } = req

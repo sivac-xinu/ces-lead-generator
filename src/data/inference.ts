@@ -602,23 +602,45 @@ export function deepInferAll(lead: Lead): IntelligenceResult {
   const isEnterprise = emp > 2000
   const isMidMarket = emp >= 200
   const segment = isEnterprise ? 'Enterprise' : isMidMarket ? 'Mid-Market' : 'SMB'
-  const icpInd = lead.industry || 'Other'
+  const icpInd = lead.industry && lead.industry !== 'Other' ? lead.industry : undefined
+
+  const titleIcp = tl.includes('ciso') || tl.includes('security')
+    ? 'Cybersecurity'
+    : tl.includes('cio') || tl.includes('cto') || tl.includes('vp') || tl.includes('head')
+      ? 'IT Leadership'
+      : tl.includes('cfo') || tl.includes('finance')
+        ? 'Finance Technology'
+        : tl.includes('operations') || tl.includes('sre')
+          ? 'Infrastructure Operations'
+          : undefined
+
+  const baseIcp = icpInd ?? titleIcp ?? 'General Business'
+  const altIcp = titleIcp && titleIcp !== baseIcp ? titleIcp : undefined
 
   const icp_options = [
     {
-      value: `${segment} ${icpInd}`,
+      value: `${segment} ${baseIcp}`,
       confidence: 'high' as const,
-      reasoning: `${segment} segment based on ${emp.toLocaleString()} employees in ${lead.industry || 'unknown'} industry`,
+      reasoning: `${segment} segment based on ${emp ? `${emp.toLocaleString()} employees` : 'available profile data'}${icpInd ? ` in ${lead.industry}` : titleIcp ? ` with ${lead.contact_title} as contact` : ''}`,
     },
+    ...(altIcp
+      ? [
+          {
+            value: `${segment} ${altIcp}`,
+            confidence: 'medium' as const,
+            reasoning: `Contact role (${lead.contact_title}) suggests a ${altIcp} buying centre`,
+          },
+        ]
+      : []),
     {
-      value: isEnterprise ? `Mid-Market ${icpInd}` : `Enterprise ${icpInd}`,
+      value: isEnterprise ? `Mid-Market ${baseIcp}` : `Enterprise ${baseIcp}`,
       confidence: 'medium' as const,
       reasoning: isEnterprise
         ? 'Could be Mid-Market if employee count is inflated or includes contractors'
         : 'Could be Enterprise if revenue or scope is larger than headcount suggests',
     },
     {
-      value: isEnterprise ? `SMB ${icpInd}` : isMidMarket ? `SMB ${icpInd}` : `Mid-Market ${icpInd}`,
+      value: isEnterprise ? `SMB ${baseIcp}` : isMidMarket ? `SMB ${baseIcp}` : `Mid-Market ${baseIcp}`,
       confidence: 'low' as const,
       reasoning: 'Boundary case based on partial data — verify with actual revenue or budget figures',
     },
