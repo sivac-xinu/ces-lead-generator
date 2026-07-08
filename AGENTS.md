@@ -10,6 +10,7 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - Stack: Vite + React 19 + TypeScript + Tailwind CSS + React Query + Zustand
 - Deployed to GitHub Pages from `v2` branch at `https://sivac-xinu.github.io/ces-lead-generator/`
 - Original project in `/Users/staray/Documents/Projects/CES_Internal_Projects/Infra_Lead_Geenerator/` remains untouched
+- Removed conflicting deploy workflow from `main` so only `v2` controls the GitHub Pages site
 
 ### Bug Fixes
 - **PP_THEMES undefined** in `src/main.js` — was `PP_THEMES` instead of `INFER_RULES.PP_THEMES`
@@ -19,19 +20,21 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - **Deep mode company uniqueness** — all companies were being skipped due to empty-industry guard that excluded all candidates
 - **Intel modal backdrop close** in v2 — fixed `dispatchAction` to use `event.target` instead of `e.target`
 - **ai-proxy 502 errors** — Edge Function now returns real provider status codes and messages (429 rate limit, 401 invalid key, etc.)
-- **Leads table schema mismatch** — documented and typed missing columns (`employees`, `sales_rep`, `imported_by`, `company_source`, `icp`, `tier`)
+- **Leads table schema mismatch** — documented and typed missing columns (`employees`, `sales_rep`, `imported_by`, `company_source`, `icp`, `tier`, `notes`)
 
 ### Auth & Admin
 - Branded auth page with CES logo
 - Signup confirmation callback handling + success message
 - Admin-only shared AI keys via `ces_settings` table
 - `admin-delete-user` Edge Function purges Supabase Auth user when admin deletes a user
+- Added `notes` column to user profile form and admin view
 
 ### AI Intelligence
 - Unified `ai-proxy` Edge Function for OpenRouter, OpenAI, and Claude
 - Reads shared admin keys from `ces_settings`, falls back to Supabase secrets
 - Local rule fallback via `deepInferAll` when cloud AI fails
 - Free-model rate-limit warning in Intelligence modal
+- **Expanded sales research snippet** with summary, recent activities, key drivers, industry trends, likely next portfolio, competitors, tech stack, decision makers, buying triggers, talking points, CES entry angle, and CES support
 
 ### Data Import & Attribution
 - **Manual lead add** — records `imported_by` as `'Manual'`
@@ -56,13 +59,14 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - `LeadCard` shows "No contacts" prompt for company-only leads
 
 ### UI/UX
-- Exact CES logo PNG on auth page
+- Exact CES logo PNG on auth page and as browser favicon
 - Pain Points Glance page with manual CRUD + inline edit
 - Solutions Catalog preserved
 - Call Tracker with pipeline
 - Script Generator with tone selection
 - CSV import column guide + sample CSV download
 - 404.html for SPA routing on GitHub Pages
+- Renamed "API Sources" navigation/page to **Lead External Sources**
 
 ### Tests & Build
 - 133 unit/component tests passing
@@ -75,12 +79,15 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - `contacts` table is the source of truth for multiple contacts; `leads.contact_*` remains the primary contact mirror
 - Cloud AI errors return real provider messages instead of generic 502
 - Free OpenRouter models are rate-limited; paid key/credits recommended for reliable AI
+- GitHub Pages deploys only from the `v2` branch; `main` branch no longer has a Pages deploy workflow
+- Intelligence results now include richer sales research fields to support outreach prep
 
 ## Next Steps
 1. Run the updated migrations in Supabase SQL Editor (contacts table + leads columns)
 2. Backfill primary contacts from existing leads
 3. Verify Clearbit search/import and multi-contact CSV import on live site
 4. Add OpenRouter credits or switch to non-free model for consistent AI results
+5. Smoke test the expanded AI research snippet in the live Intelligence modal
 
 ## Key Constraints
 - Supabase Auth site URL must be `https://sivac-xinu.github.io/ces-lead-generator/`
