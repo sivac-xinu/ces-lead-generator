@@ -41,6 +41,7 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - **Expanded sales research snippet** with summary, recent activities, upcoming activities/events, key drivers, industry trends, likely next portfolio, competitors, tech stack, decision makers, buying triggers, talking points, CES entry angle, and CES support
 - **Intelligence-driven ICP suggestions** — AI prompt now asks for company-specific ideal-customer-profile labels instead of generic size+industry placeholders; local fallback also uses contact-title and industry signals
 - **Apply All from Intelligence** now persists the full research/enrichment summary into the lead `notes` field, and `notes` is surfaced on the lead card
+- **Intelligence now infers industry and employee count** so imported leads get proper classification for Lead Discovery filters
 
 ### Data Import & Attribution
 - **Manual lead add** — records `imported_by` as `'Manual'`
