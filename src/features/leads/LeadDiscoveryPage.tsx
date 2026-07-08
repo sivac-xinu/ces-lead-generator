@@ -50,14 +50,19 @@ export function LeadDiscoveryPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [addLeadOpen, setAddLeadOpen] = useState(false)
 
-  const repOptions = useMemo(
-    () =>
-      profiles.map((p) => ({
-        value: displayName(p),
-        email: p.email,
-      })),
-    [profiles]
-  )
+  const repOptions = useMemo(() => {
+    const fromProfiles = profiles.map((p) => ({
+      value: displayName(p),
+      email: p.email,
+    }))
+    const fromLeads = leads
+      .map((l) => l.sales_rep)
+      .filter((rep): rep is string => !!rep)
+      .filter((rep) => !fromProfiles.some((p) => p.value === rep || p.email === rep))
+      .filter((rep, idx, arr) => arr.indexOf(rep) === idx)
+      .map((rep) => ({ value: rep, email: rep }))
+    return [...fromProfiles, ...fromLeads]
+  }, [profiles, leads])
 
   const filtered = useMemo(() => {
     const q = filters.search.toLowerCase()
@@ -71,13 +76,23 @@ export function LeadDiscoveryPage() {
         if (leadSize !== filters.size) return false
       }
       if (filters.salesRep) {
-        const match = repOptions.find(
-          (p) => p.value === filters.salesRep || p.email === filters.salesRep
-        )
-        const leadRep = l.sales_rep
+        const selected = filters.salesRep.toLowerCase().trim()
+        const leadRep = l.sales_rep?.toLowerCase().trim() ?? ''
         if (!leadRep) return false
-        if (match && leadRep !== match.value && leadRep !== match.email) return false
-        if (!match && leadRep !== filters.salesRep) return false
+        const match = repOptions.find(
+          (p) =>
+            p.value.toLowerCase() === selected ||
+            p.email.toLowerCase() === selected
+        )
+        if (match) {
+          if (
+            leadRep !== match.value.toLowerCase() &&
+            leadRep !== match.email.toLowerCase()
+          )
+            return false
+        } else if (leadRep !== selected) {
+          return false
+        }
       }
       if (
         q &&
