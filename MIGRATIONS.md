@@ -201,17 +201,34 @@ values ('global', '{}'::jsonb)
 on conflict (id) do nothing;
 ```
 
+## Add name columns to profiles
+
+The v2 app stores first and last names so leads can be assigned to reps by name instead of email.
+
+```sql
+alter table public.profiles
+  add column if not exists first_name text,
+  add column if not exists last_name text;
+```
+
 ## Create profiles on signup
 
-New authenticated users need a `profiles` row so the app can read their role and approval status. Use a trigger that runs with elevated privileges.
+New authenticated users need a `profiles` row so the app can read their role and approval status. Use a trigger that runs with elevated privileges. Names are read from Supabase Auth user metadata if provided during sign-up.
 
 ```sql
 -- Function that creates a profile row for a new auth user.
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, email, role, approved)
-  values (new.id, new.email, 'user', false)
+  insert into public.profiles (id, email, first_name, last_name, role, approved)
+  values (
+    new.id,
+    new.email,
+    new.raw_user_meta_data->>'first_name',
+    new.raw_user_meta_data->>'last_name',
+    'user',
+    false
+  )
   on conflict (id) do nothing;
   return new;
 end;

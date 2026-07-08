@@ -11,6 +11,7 @@ import { useUIStore } from '@/store/uiStore'
 import { CES_FIELDS, FIELD_SYNONYMS, inferPainPoints } from '@/data/inference'
 import { inferICP, inferITType, inferTier } from '@/utils/lead'
 import { cn } from '@/utils/cn'
+import { displayName } from '@/utils/user'
 import type { Contact } from '@/types'
 
 interface CsvImportModalProps {
@@ -280,7 +281,7 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
     if (!requiredMapped || rows.length === 0) return
 
     const fileName = file?.name ?? 'unknown.csv'
-    const importedBy = user?.email ?? 'Unknown'
+    const importedBy = displayName(user) || user?.email || 'Unknown'
     const assignedSalesRep = salesRep || importedBy
 
     // Group rows by company so multiple contacts for the same company become one lead.
@@ -485,8 +486,8 @@ export function CsvImportModal({ open, onClose }: CsvImportModalProps) {
               >
                 <option value="">— Default (importer) —</option>
                 {profiles.map((p) => (
-                  <option key={p.id} value={p.email}>
-                    {p.email}
+                  <option key={p.id} value={displayName(p)}>
+                    {displayName(p)}
                   </option>
                 ))}
               </Select>

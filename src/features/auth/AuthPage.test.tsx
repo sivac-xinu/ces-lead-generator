@@ -49,11 +49,13 @@ describe('AuthPage', () => {
     render(<AuthPage />)
 
     fireEvent.click(screen.getByRole('button', { name: /Sign Up/i }))
+    fireEvent.change(getControlByLabel('First Name'), { target: { value: 'New' } })
+    fireEvent.change(getControlByLabel('Last Name'), { target: { value: 'User' } })
     fireEvent.change(getControlByLabel('Work Email'), { target: { value: 'new@example.com' } })
     fireEvent.change(getControlByLabel('Password'), { target: { value: 'password123' } })
     fireEvent.click(getSubmitButton(/Create Account/i))
 
-    await waitFor(() => expect(signUp).toHaveBeenCalledWith('new@example.com', 'password123'))
+    await waitFor(() => expect(signUp).toHaveBeenCalledWith('new@example.com', 'password123', 'New', 'User'))
   })
 
   it('submits password reset and shows a confirmation message', async () => {

@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { supabase } from '@/lib/supabase'
+import { displayName } from '@/utils/user'
 import type { UserProfile, UserRole } from '@/types'
 
 const PROFILES_QUERY_KEY = 'profiles'
@@ -77,6 +79,23 @@ export function AdminPage() {
     )
   }
 
+  const handleNameChange = async (id: string, firstName: string, lastName: string) => {
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ first_name: firstName, last_name: lastName })
+      .eq('id', id)
+    if (updateError) {
+      setError(updateError.message)
+      return
+    }
+    qc.setQueryData<UserProfile[]>(
+      [PROFILES_QUERY_KEY],
+      (prev) =>
+        prev?.map((p) => (p.id === id ? { ...p, first_name: firstName, last_name: lastName } : p)) ??
+        []
+    )
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this user? This cannot be undone.')) return
     try {
@@ -127,6 +146,7 @@ export function AdminPage() {
                 onApprove={handleApprove}
                 onReject={handleReject}
                 onRoleChange={handleRoleChange}
+                onNameChange={handleNameChange}
                 onDelete={handleDelete}
               />
             ))}
@@ -150,6 +170,7 @@ export function AdminPage() {
                 onApprove={handleApprove}
                 onReject={handleReject}
                 onRoleChange={handleRoleChange}
+                onNameChange={handleNameChange}
                 onDelete={handleDelete}
               />
             ))}
@@ -166,18 +187,48 @@ interface UserRowProps {
   onApprove: (id: string) => Promise<void>
   onReject: (id: string) => Promise<void>
   onRoleChange: (id: string, role: UserRole) => Promise<void>
+  onNameChange: (id: string, firstName: string, lastName: string) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }
 
-function UserRow({ profile, currentUserId, onApprove, onReject, onRoleChange, onDelete }: UserRowProps) {
+function UserRow({
+  profile,
+  currentUserId,
+  onApprove,
+  onReject,
+  onRoleChange,
+  onNameChange,
+  onDelete,
+}: UserRowProps) {
   const isSelf = profile.id === currentUserId
+  const [firstName, setFirstName] = useState(profile.first_name ?? '')
+  const [lastName, setLastName] = useState(profile.last_name ?? '')
+  const nameDirty = firstName !== (profile.first_name ?? '') || lastName !== (profile.last_name ?? '')
+
   return (
-    <div className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="font-medium">{profile.email}</p>
-        <div className="mt-1 flex items-center gap-2">
+    <div className="card flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex-1 space-y-2">
+        <p className="font-medium">{displayName(profile)}</p>
+        {displayName(profile) !== profile.email && (
+          <p className="text-sm text-ces-muted">{profile.email}</p>
+        )}
+        <div className="flex items-center gap-2">
           <Badge variant={profile.role === 'admin' ? 'hybrid' : 'default'}>{profile.role}</Badge>
           {!profile.approved && <Badge variant="urgency">pending</Badge>}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Input
+            placeholder="First name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            aria-label={`First name for ${profile.email}`}
+          />
+          <Input
+            placeholder="Last name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            aria-label={`Last name for ${profile.email}`}
+          />
         </div>
       </div>
 
@@ -201,6 +252,13 @@ function UserRow({ profile, currentUserId, onApprove, onReject, onRoleChange, on
           <option value="user">user</option>
           <option value="admin">admin</option>
         </Select>
+        <Button
+          size="sm"
+          onClick={() => onNameChange(profile.id, firstName, lastName)}
+          disabled={!nameDirty}
+        >
+          Save Name
+        </Button>
         <Button
           size="sm"
           variant="danger"

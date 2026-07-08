@@ -9,6 +9,8 @@ const E2E_AUTH_BYPASS_ENV = import.meta.env.VITE_E2E_AUTH_BYPASS === 'true'
 const E2E_USER: UserProfile = {
   id: 'e2e-user',
   email: 'e2e@example.com',
+  first_name: 'E2E',
+  last_name: 'Tester',
   role: 'admin',
   approved: true,
 }
@@ -74,8 +76,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error ?? undefined }
   }
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password })
+  const signUp = async (
+    email: string,
+    password: string,
+    firstName?: string,
+    lastName?: string
+  ) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+        },
+      },
+    })
     return { error: error ?? undefined }
   }
 

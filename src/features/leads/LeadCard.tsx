@@ -1,6 +1,8 @@
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/utils/cn'
+import { displayName } from '@/utils/user'
+import { useProfiles } from '@/hooks/useProfiles'
 import type { Lead } from '@/types'
 import { Brain, FileText, Phone, Trash2 } from 'lucide-react'
 
@@ -13,8 +15,17 @@ interface LeadCardProps {
 }
 
 export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete }: LeadCardProps) {
+  const { data: profiles = [] } = useProfiles()
   const itTypeVariant =
     lead.it_type === 'Cloud' ? 'cloud' : lead.it_type === 'On-Premise' ? 'onprem' : 'hybrid'
+
+  const repDisplay = (() => {
+    if (!lead.sales_rep) return null
+    const match = profiles.find(
+      (p) => p.email === lead.sales_rep || displayName(p) === lead.sales_rep
+    )
+    return match ? displayName(match) : lead.sales_rep
+  })()
 
   return (
     <div className={cn('card', lead.imported && 'border-l-4 border-l-green-600')}>
@@ -32,7 +43,7 @@ export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete }
         <Badge variant={itTypeVariant}>{lead.it_type}</Badge>
         <Badge variant="industry">{lead.industry}</Badge>
         {lead.size && <Badge>{lead.size} emp</Badge>}
-        {lead.sales_rep && <Badge variant="industry">Rep: {lead.sales_rep}</Badge>}
+        {repDisplay && <Badge variant="industry">Rep: {repDisplay}</Badge>}
       </div>
 
       <div className="mt-3 text-sm">

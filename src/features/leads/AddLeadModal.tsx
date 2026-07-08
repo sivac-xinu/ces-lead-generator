@@ -8,6 +8,7 @@ import { useCreateLead } from '@/hooks/useLeads'
 import { useProfiles } from '@/hooks/useProfiles'
 import { useUIStore } from '@/store/uiStore'
 import { inferICP, inferITType, inferTier } from '@/utils/lead'
+import { displayName } from '@/utils/user'
 import { Plus, Trash2, Star } from 'lucide-react'
 
 interface AddLeadModalProps {
@@ -46,7 +47,7 @@ export function AddLeadModal({ open, onClose }: AddLeadModalProps) {
     employees: '',
     location: '',
     website: '',
-    sales_rep: user?.email ?? '',
+    sales_rep: displayName(user) ?? '',
   })
   const [contacts, setContacts] = useState<ContactForm[]>([
     { name: '', title: '', email: '', phone: '' },
@@ -60,7 +61,7 @@ export function AddLeadModal({ open, onClose }: AddLeadModalProps) {
       employees: '',
       location: '',
       website: '',
-      sales_rep: user?.email ?? '',
+      sales_rep: displayName(user) ?? '',
     })
     setContacts([{ name: '', title: '', email: '', phone: '' }])
     setPrimaryIndex(0)
@@ -120,7 +121,7 @@ export function AddLeadModal({ open, onClose }: AddLeadModalProps) {
         pain_points: [],
         imported: false,
         imported_by: user?.email ?? 'Manual',
-        sales_rep: form.sales_rep || user?.email || undefined,
+        sales_rep: form.sales_rep || displayName(user) || undefined,
         status: 'New',
         contacts: validContacts.map((c, i) => ({
           name: c.name.trim(),
@@ -192,8 +193,8 @@ export function AddLeadModal({ open, onClose }: AddLeadModalProps) {
             <Select value={form.sales_rep} onChange={(e) => update('sales_rep', e.target.value)}>
               <option value="">— Select —</option>
               {profiles.map((p) => (
-                <option key={p.id} value={p.email}>
-                  {p.email}
+                <option key={p.id} value={displayName(p)}>
+                  {displayName(p)}
                 </option>
               ))}
             </Select>

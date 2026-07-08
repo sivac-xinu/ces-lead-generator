@@ -33,6 +33,8 @@ export function AuthPage() {
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>(initial?.mode ?? 'signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [error, setError] = useState(initial?.error ?? '')
   const [message, setMessage] = useState(initial?.message ?? '')
 
@@ -54,7 +56,7 @@ export function AuthPage() {
       return
     }
 
-    const { error } = await signUp(email, password)
+    const { error } = await signUp(email, password, firstName, lastName)
     if (error) {
       setError(error.message)
       return
@@ -63,6 +65,8 @@ export function AuthPage() {
     setMessage('Account created. Please check your email for a confirmation link.')
     setEmail('')
     setPassword('')
+    setFirstName('')
+    setLastName('')
   }
 
   return (
@@ -95,6 +99,30 @@ export function AuthPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          {mode === 'signup' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">First Name</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  className="input"
+                  required
+                />
+              </div>
+              <div>
+                <label className="label">Last Name</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  className="input"
+                  required
+                />
+              </div>
+            </div>
+          )}
           <div>
             <label className="label">Work Email</label>
             <input

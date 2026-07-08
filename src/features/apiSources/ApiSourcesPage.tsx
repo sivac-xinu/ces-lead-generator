@@ -6,6 +6,7 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { useCreateLead, type CreateLeadInput } from '@/hooks/useLeads'
 import { useUIStore } from '@/store/uiStore'
 import { inferICP, inferITType, inferTier } from '@/utils/lead'
+import { displayName } from '@/utils/user'
 
 
 type Tab = 'zoominfo' | 'clearbit'
@@ -91,7 +92,7 @@ export function ApiSourcesPage() {
   const { user } = useAuth()
   const createLead = useCreateLead()
   const { showToast } = useUIStore()
-  const salesRep = user?.email ?? ''
+  const salesRep = displayName(user) || user?.email || ''
 
   const handleTestZoomInfo = async () => {
     setZoomLoading(true)
