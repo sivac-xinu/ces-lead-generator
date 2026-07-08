@@ -34,7 +34,7 @@ Transform the legacy CES Lead Generator into a production-ready React + TypeScri
 - Reads shared admin keys from `ces_settings`, falls back to Supabase secrets
 - Local rule fallback via `deepInferAll` when cloud AI fails
 - Free-model rate-limit warning in Intelligence modal
-- **Expanded sales research snippet** with summary, recent activities, key drivers, industry trends, likely next portfolio, competitors, tech stack, decision makers, buying triggers, talking points, CES entry angle, and CES support
+- **Expanded sales research snippet** with summary, recent activities, upcoming activities/events, key drivers, industry trends, likely next portfolio, competitors, tech stack, decision makers, buying triggers, talking points, CES entry angle, and CES support
 
 ### Data Import & Attribution
 - **Manual lead add** — records `imported_by` as `'Manual'`
