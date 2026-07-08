@@ -7,6 +7,7 @@ import { LeadCard } from './LeadCard'
 import { IntelligenceModal } from '@/features/intelligence/IntelligenceModal'
 import { CsvImportModal } from '@/features/csv/CsvImportModal'
 import { AddLeadModal } from './AddLeadModal'
+import { ContactsModal } from '@/features/contacts/ContactsModal'
 import { useDeleteLead, useLeads } from '@/hooks/useLeads'
 import { useProfiles } from '@/hooks/useProfiles'
 import { useUIStore } from '@/store/uiStore'
@@ -47,6 +48,7 @@ export function LeadDiscoveryPage() {
   })
 
   const [intelligenceLead, setIntelligenceLead] = useState<Lead | null>(null)
+  const [contactsLeadId, setContactsLeadId] = useState<number | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [addLeadOpen, setAddLeadOpen] = useState(false)
 
@@ -225,6 +227,7 @@ export function LeadDiscoveryPage() {
             onScript={goToScript}
             onTracker={goToTracker}
             onDelete={handleDelete}
+            onContacts={setContactsLeadId}
           />
         ))}
         {filtered.length === 0 && (
@@ -239,6 +242,13 @@ export function LeadDiscoveryPage() {
         open={!!intelligenceLead}
         onClose={() => setIntelligenceLead(null)}
       />
+      {contactsLeadId && (
+        <ContactsModal
+          leadId={contactsLeadId}
+          open
+          onClose={() => setContactsLeadId(null)}
+        />
+      )}
       <CsvImportModal open={importOpen} onClose={() => setImportOpen(false)} />
       <AddLeadModal open={addLeadOpen} onClose={() => setAddLeadOpen(false)} />
     </div>

@@ -4,7 +4,7 @@ import { cn } from '@/utils/cn'
 import { displayName } from '@/utils/user'
 import { useProfiles } from '@/hooks/useProfiles'
 import type { Lead } from '@/types'
-import { Brain, FileText, Phone, Trash2, StickyNote } from 'lucide-react'
+import { Brain, FileText, Phone, Trash2, StickyNote, Users } from 'lucide-react'
 
 interface LeadCardProps {
   lead: Lead
@@ -12,9 +12,10 @@ interface LeadCardProps {
   onScript: (leadId: number) => void
   onTracker: (leadId: number) => void
   onDelete: (leadId: number) => void
+  onContacts?: (leadId: number) => void
 }
 
-export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete }: LeadCardProps) {
+export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete, onContacts }: LeadCardProps) {
   const { data: profiles = [] } = useProfiles()
   const itTypeVariant =
     lead.it_type === 'Cloud' ? 'cloud' : lead.it_type === 'On-Premise' ? 'onprem' : 'hybrid'
@@ -87,6 +88,11 @@ export function LeadCard({ lead, onIntelligence, onScript, onTracker, onDelete }
         <Button size="sm" onClick={() => onScript(lead.id)}>
           <FileText className="h-3.5 w-3.5" /> Script
         </Button>
+        {onContacts && (
+          <Button size="sm" onClick={() => onContacts(lead.id)}>
+            <Users className="h-3.5 w-3.5" /> Contacts
+          </Button>
+        )}
         <Button size="sm" onClick={() => onTracker(lead.id)}>
           <Phone className="h-3.5 w-3.5" /> Log Call
         </Button>
