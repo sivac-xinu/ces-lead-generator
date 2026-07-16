@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { getDB } from '@/lib/db'
 
 export interface AIProviderKeys {
   openrouter_key?: string
@@ -8,25 +8,18 @@ export interface AIProviderKeys {
   gemini_key?: string
 }
 
-const SETTINGS_ID = 'global'
 const QUERY_KEY = 'ces-settings'
 
 export function useAISettings() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ces_settings')
-        .select('ai_keys')
-        .eq('id', SETTINGS_ID)
-        .single()
+      const { data, error } = await getDB().aiSettings.getKeys()
       if (error) {
-        if (error.message?.includes('does not exist')) return null
-        // Row not found is OK — settings haven't been created yet.
-        if (error.code === 'PGRST116') return null
-        throw error
+        if (error.includes('does not exist')) return null
+        throw new Error(error)
       }
-      return (data?.ai_keys || null) as AIProviderKeys | null
+      return (data || null) as AIProviderKeys | null
     },
   })
 }
@@ -35,21 +28,14 @@ export function useUpdateAISettings() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (keys: AIProviderKeys) => {
-      const payload = {
-        openrouter_key: keys.openrouter_key?.trim() || undefined,
-        openai_key: keys.openai_key?.trim() || undefined,
-        anthropic_key: keys.anthropic_key?.trim() || undefined,
-        gemini_key: keys.gemini_key?.trim() || undefined,
-      }
-      const { error } = await supabase.from('ces_settings').upsert(
-        {
-          id: SETTINGS_ID,
-          ai_keys: payload,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'id' }
-      )
-      if (error) throw error
+      const payload: Record<string, string> = {}
+      if (keys.openrouter_key?.trim()) payload.openrouter_key = keys.openrouter_key.trim()
+      if (keys.openai_key?.trim()) payload.openai_key = keys.openai_key.trim()
+      if (keys.anthropic_key?.trim()) payload.anthropic_key = keys.anthropic_key.trim()
+      if (keys.gemini_key?.trim()) payload.gemini_key = keys.gemini_key.trim()
+
+      const { error } = await getDB().aiSettings.upsertKeys(payload)
+      if (error) throw new Error(error)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] }),
   })

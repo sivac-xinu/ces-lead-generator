@@ -30,3 +30,7 @@ playwright/.cache/
 
 # Supabase CLI temp files
 supabase/.temp/
+
+# Build artifacts / deploy packages
+deploy-packages/
+start.sh

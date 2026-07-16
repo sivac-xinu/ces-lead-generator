@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { useAuth } from '@/features/auth/AuthProvider'
-import { supabase } from '@/lib/supabase'
+import { getAuth } from '@/lib/auth'
 import { displayName } from '@/utils/user'
 import type { UserProfile, UserRole } from '@/types'
 
@@ -19,12 +19,7 @@ export function AdminPage() {
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: [PROFILES_QUERY_KEY],
     queryFn: async () => {
-      const { data, error: fetchError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (fetchError) throw fetchError
-      return (data ?? []) as UserProfile[]
+      return await getAuth().listProfiles()
     },
     enabled: isAdmin,
   })
@@ -33,10 +28,7 @@ export function AdminPage() {
   const approvedUsers = useMemo(() => profiles.filter((p) => p.approved), [profiles])
 
   const handleApprove = async (id: string) => {
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ approved: true })
-      .eq('id', id)
+    const { error: updateError } = await getAuth().updateProfile(id, { approved: true })
     if (updateError) {
       setError(updateError.message)
       return
@@ -48,10 +40,8 @@ export function AdminPage() {
   }
 
   const deleteUserCompletely = async (id: string) => {
-    const { error } = await supabase.functions.invoke('admin-delete-user', {
-      body: { userId: id },
-    })
-    if (error) throw error
+    const { error } = await getAuth().deleteUser(id)
+    if (error) throw new Error(error.message)
   }
 
   const handleReject = async (id: string) => {
@@ -68,7 +58,7 @@ export function AdminPage() {
   }
 
   const handleRoleChange = async (id: string, role: UserRole) => {
-    const { error: updateError } = await supabase.from('profiles').update({ role }).eq('id', id)
+    const { error: updateError } = await getAuth().updateProfile(id, { role })
     if (updateError) {
       setError(updateError.message)
       return
@@ -80,10 +70,10 @@ export function AdminPage() {
   }
 
   const handleNameChange = async (id: string, firstName: string, lastName: string) => {
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ first_name: firstName, last_name: lastName })
-      .eq('id', id)
+    const { error: updateError } = await getAuth().updateProfile(id, {
+      first_name: firstName,
+      last_name: lastName,
+    })
     if (updateError) {
       setError(updateError.message)
       return

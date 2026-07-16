@@ -1,11 +1,11 @@
-import { supabase } from './supabase'
+import { getAPI } from './api'
 import { classifyDeep } from '@/lib/classify'
 import type { AIProvider, IntelligenceResult, Lead } from '@/types'
 
 export class AIFunctionNotDeployedError extends Error {
   constructor() {
     super(
-      'The ai-proxy Edge Function is not deployed. Switch to Local Rules or deploy it with: npx supabase functions deploy ai-proxy'
+      'The AI proxy is not deployed. Switch to Local Rules or deploy it.'
     )
     this.name = 'AIFunctionNotDeployedError'
   }
@@ -18,37 +18,15 @@ export interface AIIntelligenceResponse {
   notDeployed?: boolean
 }
 
-async function extractFunctionError(error: unknown): Promise<string> {
-  if (!(error instanceof Error)) return 'AI request failed'
-
-  // Supabase functions.invoke returns the response in `error.context`.
-  const ctx = (error as { context?: Response }).context
-  if (ctx && typeof ctx.json === 'function') {
-    try {
-      const body = (await ctx.json()) as { error?: string; message?: string }
-      if (body?.error) return body.error
-      if (body?.message) return body.message
-    } catch {
-      try {
-        const text = await ctx.text()
-        if (text) return text
-      } catch {
-        // ignore
-      }
-    }
-  }
-
-  return error.message || 'AI request failed'
-}
-
-function isNotDeployedError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false
-  const message = error.message?.toLowerCase() ?? ''
+function isNotDeployedError(message: string): boolean {
+  const lower = message.toLowerCase()
   return (
-    message.includes('not found') ||
-    message.includes('404') ||
-    message.includes('preflight') ||
-    message.includes('cannot load')
+    lower.includes('not found') ||
+    lower.includes('404') ||
+    lower.includes('preflight') ||
+    lower.includes('cannot load') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('networkerror')
   )
 }
 
@@ -68,21 +46,19 @@ export async function runAIIntelligence(
   }
 
   try {
-    const { data, error } = await supabase.functions.invoke('ai-proxy', {
-      body: {
-        provider,
-        model,
-        depth,
-        lead: {
-          company: lead.company,
-          industry: lead.industry,
-          employees: lead.employees,
-          contact_name: lead.contact_name,
-          contact_title: lead.contact_title,
-          annual_it_budget: lead.annual_it_budget,
-          current_infra: lead.current_infra,
-          pain_points: lead.pain_points,
-        },
+    const { data, error } = await getAPI().callAI({
+      provider,
+      model,
+      depth,
+      lead: {
+        company: lead.company,
+        industry: lead.industry,
+        employees: lead.employees,
+        contact_name: lead.contact_name,
+        contact_title: lead.contact_title,
+        annual_it_budget: lead.annual_it_budget,
+        current_infra: lead.current_infra,
+        pain_points: lead.pain_points,
       },
     })
 
@@ -90,13 +66,12 @@ export async function runAIIntelligence(
       if (isNotDeployedError(error)) {
         throw new AIFunctionNotDeployedError()
       }
-      const msg = await extractFunctionError(error)
-      throw new Error(msg)
+      throw new Error(error)
     }
 
-    return { result: data as IntelligenceResult, fallback: false }
+    return { result: data as unknown as IntelligenceResult, fallback: false }
   } catch (err) {
-    const message = await extractFunctionError(err)
+    const message = err instanceof Error ? err.message : 'AI request failed'
 
     if (err instanceof AIFunctionNotDeployedError) {
       if (fallbackToLocal) {
@@ -105,9 +80,16 @@ export async function runAIIntelligence(
       throw err
     }
 
+    if (isNotDeployedError(message)) {
+      if (fallbackToLocal) {
+        return { result: classifyDeep(lead), fallback: true, notDeployed: true }
+      }
+      throw new AIFunctionNotDeployedError()
+    }
+
     if (isMissingKeyError(message.toLowerCase())) {
       throw new Error(
-        `API key not configured for ${provider}. Ask an admin to add it in Settings → AI Engine or set the ${provider.toUpperCase()}_API_KEY Supabase secret.`
+        `API key not configured for ${provider}. Ask an admin to add it in Settings → AI Engine.`
       )
     }
 

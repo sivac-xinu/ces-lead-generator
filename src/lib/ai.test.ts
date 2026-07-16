@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { runAIIntelligence } from './ai'
 import { LEADS } from '@/data/leads'
-import * as supabaseModule from '@/lib/supabase'
+import { initAPI } from './api'
 
 describe('runAIIntelligence local provider', () => {
   it('returns local rules without calling the edge function', async () => {
@@ -15,11 +15,12 @@ describe('runAIIntelligence cloud fallback', () => {
   beforeEach(() => vi.restoreAllMocks())
 
   it('falls back to the local classifier on a generic (non-not-deployed) provider error', async () => {
-    vi.spyOn(supabaseModule, 'supabase', 'get').mockReturnValue({
-      functions: {
-        invoke: vi.fn().mockResolvedValue({ data: null, error: new Error('Provider rate limit exceeded') }),
-      },
-    } as unknown as typeof supabaseModule.supabase)
+    initAPI({
+      callAI: vi.fn().mockResolvedValue({ data: null, error: 'Provider rate limit exceeded' }),
+      searchZoomInfoCompanies: vi.fn(),
+      enrichZoomInfoCompany: vi.fn(),
+      enrichZoomInfoContact: vi.fn(),
+    })
 
     const res = await runAIIntelligence('openai', 'gpt-4o', 'deep', LEADS[0])
 

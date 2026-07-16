@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import type { UserProfile } from '@/types'
+import { getDB } from '@/lib/db'
 
 const PROFILES_QUERY_KEY = 'profiles'
 
@@ -8,9 +7,9 @@ export function useProfiles() {
   return useQuery({
     queryKey: [PROFILES_QUERY_KEY],
     queryFn: async () => {
-      const { data, error } = await supabase.from('profiles').select('*').order('email')
-      if (error) throw error
-      return (data || []) as UserProfile[]
+      const { data, error } = await getDB().profiles.findAll({ orderBy: 'email', ascending: true })
+      if (error) throw new Error(error)
+      return data ?? []
     },
   })
 }

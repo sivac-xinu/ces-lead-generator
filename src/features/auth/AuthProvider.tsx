@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { getAuth } from '@/lib/auth'
 import { AuthContext, type AuthContextValue, type UserProfile } from './AuthContext'
 import type { UserRole } from '@/types'
 
@@ -16,8 +16,6 @@ const E2E_USER: UserProfile = {
 }
 
 function getBypassUser(): UserProfile | null {
-  // The E2E bypass requires both the build-time env flag and a runtime localStorage
-  // flag so it cannot be accidentally triggered in production by end users.
   if (!E2E_AUTH_BYPASS_ENV) return null
   if (typeof localStorage !== 'undefined' && localStorage.getItem('ces:e2e:bypass') === 'true') {
     return E2E_USER
@@ -31,48 +29,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(() => user === null)
 
   const loadProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-
-    if (data) {
-      setUser(data as UserProfile)
-    } else {
-      setUser(null)
-    }
+    const profile = await getAuth().getProfile(userId)
+    setUser(profile as UserProfile | null)
   }
 
   useEffect(() => {
-    if (user) {
-      // Authenticated via E2E bypass; skip Supabase session initialization.
-      return
-    }
+    if (user) return
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        loadProfile(session.user.id)
+    const unsubscribe = getAuth().onAuthStateChange(async (authUser) => {
+      if (authUser) {
+        await loadProfile(authUser.id)
       } else {
         setUser(null)
       }
       setLoading(false)
     })
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        loadProfile(session.user.id)
-      } else {
-        setUser(null)
-        setLoading(false)
-      }
-    })
-
-    return () => listener.subscription.unsubscribe()
+    return unsubscribe
   }, [user])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await getAuth().signIn(email, password)
     return { error: error ?? undefined }
   }
 
@@ -82,27 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     firstName?: string,
     lastName?: string
   ) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-        },
-      },
-    })
+    const { error } = await getAuth().signUp(email, password, firstName, lastName)
     return { error: error ?? undefined }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    await getAuth().signOut()
     setUser(null)
     navigate('/', { replace: true })
   }
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email)
+    const { error } = await getAuth().resetPassword(email)
     return { error: error ?? undefined }
   }
 

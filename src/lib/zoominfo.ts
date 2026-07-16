@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { getAPI } from './api'
 
 export interface ZoomInfoSearchFilters {
   companyName?: string
@@ -41,9 +41,9 @@ export async function searchZoomInfoCompanies(filters: ZoomInfoSearchFilters): P
   if (filters.country) body.country = [filters.country]
   if (filters.technologies?.length) body.technologies = filters.technologies.join(' AND ')
 
-  const { data, error } = await supabase.functions.invoke('zoominfo-proxy?action=search/company', { body })
-  if (error) throw error
-  return (data?.data || []) as ZoomInfoLeadPartial[]
+  const { data, error } = await getAPI().searchZoomInfoCompanies(body)
+  if (error) throw new Error(error)
+  return (data ?? []) as ZoomInfoLeadPartial[]
 }
 
 export async function enrichZoomInfoCompany(companyId?: number, website?: string): Promise<ZoomInfoLeadPartial> {
@@ -51,16 +51,14 @@ export async function enrichZoomInfoCompany(companyId?: number, website?: string
   if (companyId) body.companyId = companyId
   if (website) body.website = website
 
-  const { data, error } = await supabase.functions.invoke('zoominfo-proxy?action=enrich/company', { body })
-  if (error) throw error
-  return data?.data as ZoomInfoLeadPartial
+  const { data, error } = await getAPI().enrichZoomInfoCompany(body)
+  if (error) throw new Error(error)
+  return data as ZoomInfoLeadPartial
 }
 
 export async function enrichZoomInfoContact(email?: string): Promise<Partial<ZoomInfoLeadPartial>> {
   if (!email) return {}
-  const { data, error } = await supabase.functions.invoke('zoominfo-proxy?action=enrich/contact', {
-    body: { email },
-  })
-  if (error) throw error
-  return (data?.data || {}) as Partial<ZoomInfoLeadPartial>
+  const { data, error } = await getAPI().enrichZoomInfoContact({ email })
+  if (error) throw new Error(error)
+  return (data ?? {}) as Partial<ZoomInfoLeadPartial>
 }

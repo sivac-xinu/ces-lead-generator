@@ -31,7 +31,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'VITE_E2E_AUTH_BYPASS=true npm run dev',
+    command: 'VITE_E2E_AUTH_BYPASS=true VITE_BASE_PATH=/ces-lead-generator/ npm run dev',
     url: 'http://localhost:5173/ces-lead-generator/',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,

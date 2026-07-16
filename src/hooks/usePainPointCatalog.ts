@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { getDB } from '@/lib/db'
 import { useUIStore } from '@/store/uiStore'
 
 export interface PainPointCatalogItem {
@@ -17,17 +17,16 @@ export function usePainPointCatalog() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pain_point_catalog')
-        .select('*')
-        .eq('active', true)
-        .order('created_at', { ascending: false })
+      const { data, error } = await getDB().painPointCatalog.findAll({
+        filters: { active: true },
+        orderBy: 'created_at',
+        ascending: false,
+      })
       if (error) {
-        // Graceful fallback if the table does not exist yet.
-        if (error.message?.includes('does not exist')) return []
-        throw error
+        if (error.includes('does not exist')) return []
+        throw new Error(error)
       }
-      return (data || []) as PainPointCatalogItem[]
+      return (data ?? []) as PainPointCatalogItem[]
     },
   })
 }
@@ -37,8 +36,8 @@ export function useCreatePainPoint() {
   const { showToast } = useUIStore()
   return useMutation({
     mutationFn: async (item: Omit<PainPointCatalogItem, 'id' | 'created_at'>) => {
-      const { data, error } = await supabase.from('pain_point_catalog').insert(item).select().single()
-      if (error) throw error
+      const { data, error } = await getDB().painPointCatalog.create(item)
+      if (error) throw new Error(error)
       return data as PainPointCatalogItem
     },
     onSuccess: () => {
@@ -54,13 +53,8 @@ export function useUpdatePainPoint() {
   const { showToast } = useUIStore()
   return useMutation({
     mutationFn: async ({ id, ...item }: Partial<PainPointCatalogItem> & { id: number }) => {
-      const { data, error } = await supabase
-        .from('pain_point_catalog')
-        .update(item)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
+      const { data, error } = await getDB().painPointCatalog.update(id, item)
+      if (error) throw new Error(error)
       return data as PainPointCatalogItem
     },
     onSuccess: () => {
@@ -76,9 +70,8 @@ export function useDeletePainPoint() {
   const { showToast } = useUIStore()
   return useMutation({
     mutationFn: async (id: number) => {
-      // Soft delete by marking inactive.
-      const { error } = await supabase.from('pain_point_catalog').update({ active: false }).eq('id', id)
-      if (error) throw error
+      const { error } = await getDB().painPointCatalog.update(id, { active: false })
+      if (error) throw new Error(error)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [QUERY_KEY] })
