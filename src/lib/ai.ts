@@ -63,6 +63,10 @@ export async function runAIIntelligence(
   lead: Lead,
   { fallbackToLocal = true }: { fallbackToLocal?: boolean } = {}
 ): Promise<AIIntelligenceResponse> {
+  if (provider === 'local') {
+    return { result: deepInferAll(lead), fallback: false }
+  }
+
   try {
     const { data, error } = await supabase.functions.invoke('ai-proxy', {
       body: {
