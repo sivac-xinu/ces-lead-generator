@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { deepInferAll } from '@/data/inference'
+import { classifyDeep } from '@/lib/classify'
 import type { AIProvider, IntelligenceResult, Lead } from '@/types'
 
 export class AIFunctionNotDeployedError extends Error {
@@ -64,7 +64,7 @@ export async function runAIIntelligence(
   { fallbackToLocal = true }: { fallbackToLocal?: boolean } = {}
 ): Promise<AIIntelligenceResponse> {
   if (provider === 'local') {
-    return { result: deepInferAll(lead), fallback: false }
+    return { result: classifyDeep(lead), fallback: false }
   }
 
   try {
@@ -100,7 +100,7 @@ export async function runAIIntelligence(
 
     if (err instanceof AIFunctionNotDeployedError) {
       if (fallbackToLocal) {
-        return { result: deepInferAll(lead), fallback: true, notDeployed: true }
+        return { result: classifyDeep(lead), fallback: true, notDeployed: true }
       }
       throw err
     }
@@ -112,7 +112,7 @@ export async function runAIIntelligence(
     }
 
     if (fallbackToLocal) {
-      return { result: deepInferAll(lead), fallback: true, errorMessage: message }
+      return { result: classifyDeep(lead), fallback: true, errorMessage: message }
     }
     throw err
   }
