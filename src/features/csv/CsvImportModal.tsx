@@ -9,7 +9,7 @@ import { useProfiles } from '@/hooks/useProfiles'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useUIStore } from '@/store/uiStore'
 import { CES_FIELDS, FIELD_SYNONYMS, inferPainPoints } from '@/data/inference'
-import { inferICP, inferITType, inferTier } from '@/utils/lead'
+import { classifyBasic } from '@/lib/classify'
 import { cn } from '@/utils/cn'
 import { displayName } from '@/utils/user'
 import type { Contact } from '@/types'
@@ -139,9 +139,7 @@ function buildLeadFromGroup(
 
   const industry = get('industry') || 'Other'
   const employees = parseEmployees(get('employees'))
-  const it_type = inferITType(industry)
-  const tier = inferTier(employees)
-  const icp = inferICP(employees)
+  const { it_type, tier, icp } = classifyBasic({ industry, employees })
 
   const contacts = group
     .map((row) => buildContactFromRow(row, mapping))

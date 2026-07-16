@@ -7,7 +7,7 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { useCreateLead } from '@/hooks/useLeads'
 import { useProfiles } from '@/hooks/useProfiles'
 import { useUIStore } from '@/store/uiStore'
-import { inferICP, inferITType, inferTier } from '@/utils/lead'
+import { classifyBasic } from '@/lib/classify'
 import { displayName } from '@/utils/user'
 import { Plus, Trash2, Star } from 'lucide-react'
 
@@ -115,9 +115,7 @@ export function AddLeadModal({ open, onClose }: AddLeadModalProps) {
         location: form.location.trim() || undefined,
         website: form.website.trim() || undefined,
         linkedin_url: form.website.trim() || undefined,
-        it_type: inferITType(industry),
-        tier: inferTier(employees),
-        icp: inferICP(employees),
+        ...classifyBasic({ industry, employees }),
         pain_points: [],
         imported: false,
         imported_by: user?.email ?? 'Manual',

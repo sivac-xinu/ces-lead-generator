@@ -5,7 +5,7 @@ import { searchZoomInfoCompanies, type ZoomInfoLeadPartial } from '@/lib/zoominf
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useCreateLead, type CreateLeadInput } from '@/hooks/useLeads'
 import { useUIStore } from '@/store/uiStore'
-import { inferICP, inferITType, inferTier } from '@/utils/lead'
+import { classifyBasic } from '@/lib/classify'
 import { displayName } from '@/utils/user'
 
 
@@ -32,9 +32,7 @@ function buildLeadFromZoomInfo(result: ZoomInfoLeadPartial, salesRep: string): C
     contact_phone: result.contact_phone,
     current_infra: result.current_infra,
     annual_it_budget: result.annual_it_budget,
-    it_type: inferITType(industry),
-    tier: inferTier(result.employees),
-    icp: inferICP(result.employees),
+    ...classifyBasic({ industry, employees: result.employees }),
     pain_points: [],
     imported: true,
     imported_by: 'ZoomInfo',
