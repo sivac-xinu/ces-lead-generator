@@ -18,7 +18,7 @@ export function useIntelligence() {
 
   const run = useCallback(
     async (args: { provider: AIProvider; model: string; depth: 'quick' | 'deep'; lead: Lead }) => {
-      setState((s) => ({ ...s, status: 'loading' }));
+      setState((s) => ({ ...s, status: 'loading', source: null, reason: null }));
       try {
         const res = await runAIIntelligence(args.provider, args.model, args.depth, args.lead);
         const reason = res.notDeployed ? 'not-deployed' : (res.errorMessage ?? null);

@@ -32,4 +32,23 @@ describe('useIntelligence', () => {
     expect(result.current.state.source).toBe('local');
     expect(result.current.state.reason).toBe('not-deployed');
   });
+
+  it('clears source/reason immediately when a new run starts after a fallback run', async () => {
+    const spy = vi.spyOn(ai, 'runAIIntelligence');
+    spy.mockResolvedValueOnce({
+      result: { icp_options: [], tier: 'Tier 3', it_type: 'Unknown', pain_points: [] } as never,
+      fallback: true,
+      notDeployed: true,
+    });
+    const { result } = renderHook(() => useIntelligence());
+    await act(async () => { await result.current.run({ provider: 'openai', model: 'gpt-4o', depth: 'deep', lead }); });
+    expect(result.current.state.source).toBe('local');
+
+    spy.mockReturnValueOnce(new Promise(() => {}));
+    act(() => { void result.current.run({ provider: 'openai', model: 'gpt-4o', depth: 'deep', lead }); });
+
+    expect(result.current.state.status).toBe('loading');
+    expect(result.current.state.source).toBeNull();
+    expect(result.current.state.reason).toBeNull();
+  });
 });
