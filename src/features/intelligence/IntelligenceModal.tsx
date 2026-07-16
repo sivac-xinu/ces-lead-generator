@@ -1,17 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { runAIIntelligence } from '@/lib/ai'
 import { cn } from '@/utils/cn'
-import { deepInferAll } from '@/data/inference'
 import { useUpdateLead } from '@/hooks/useLeads'
 import { sizeBucket } from '@/utils/lead'
 import { useUIStore } from '@/store/uiStore'
 import { AISettingsModal } from './AISettingsModal'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useAISettings } from '@/hooks/useAISettings'
-import type { AIProvider, IcpOption, IntelligenceResult, Lead } from '@/types'
+import { useIntelligence } from './useIntelligence'
+import type { AIProvider, IcpOption, Lead } from '@/types'
 
 interface IntelligenceModalProps {
   lead: Lead | null
@@ -31,12 +30,9 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   const [provider, setProvider] = useState<AIProvider>('local')
   const [model, setModel] = useState('rules')
   const [depth, setDepth] = useState<'quick' | 'deep'>('deep')
-  const [result, setResult] = useState<IntelligenceResult | null>(null)
   const [selectedIcp, setSelectedIcp] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [usedFallback, setUsedFallback] = useState(false)
-  const [fallbackReason, setFallbackReason] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const { state, run: runIntel } = useIntelligence()
   const updateLead = useUpdateLead()
   const { showToast } = useUIStore()
   const { isAdmin } = useAuth()
@@ -51,48 +47,36 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   }
   const hasKey = provider === 'local' || !!getAdminKey(provider)
 
+  useEffect(() => {
+    if (state.status === 'error') {
+      showToast(state.reason || 'AI analysis failed', 'error')
+      return
+    }
+    if (state.status !== 'done') return
+    if (state.result) {
+      // Sync the newly-run result's ICP suggestion into local selection state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedIcp(state.result.icp || state.result.icp_options[0]?.value || null)
+    }
+    if (state.source === 'local') {
+      showToast(
+        state.reason === 'not-deployed'
+          ? 'AI proxy is not deployed — returned local-rule results instead.'
+          : `AI provider error — returned local-rule results instead: ${state.reason}`,
+        'error'
+      )
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status, state.source, state.reason, state.result])
+
   if (!lead) return null
 
   const run = async () => {
-    setLoading(true)
-    setUsedFallback(false)
-    setFallbackReason(null)
-    try {
-      let res: IntelligenceResult
-      let fallback = false
-      let reason: string | null = null
-      if (provider === 'local') {
-        res = deepInferAll(lead)
-      } else {
-        const aiRes = await runAIIntelligence(provider, model, depth, lead)
-        res = aiRes.result
-        fallback = aiRes.fallback
-        if (aiRes.notDeployed) {
-          reason = 'not-deployed'
-        } else if (aiRes.errorMessage) {
-          reason = aiRes.errorMessage
-        }
-      }
-      setResult(res)
-      setUsedFallback(fallback)
-      setFallbackReason(reason)
-      setSelectedIcp(res.icp || res.icp_options[0]?.value || null)
-      if (fallback) {
-        showToast(
-          reason === 'not-deployed'
-            ? 'AI proxy is not deployed — returned local-rule results instead.'
-            : `AI provider error — returned local-rule results instead: ${reason}`,
-          'error'
-        )
-      }
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'AI analysis failed', 'error')
-    } finally {
-      setLoading(false)
-    }
+    await runIntel({ provider, model, depth, lead })
   }
 
   function buildNotes(): string {
+    const result = state.result
     if (!result) return ''
     const lines: string[] = []
     if (result.enrichment) {
@@ -120,6 +104,7 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   }
 
   const applyAll = async () => {
+    const result = state.result
     if (!result) return
     const employees = result.employees ?? lead.employees
     await updateLead.mutateAsync({
@@ -138,6 +123,7 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
   }
 
   const applyPainPoints = async () => {
+    const result = state.result
     if (!result) return
     await updateLead.mutateAsync({ id: lead.id, pain_points: result.pain_points })
     showToast('Pain points updated')
@@ -153,7 +139,7 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
       footer={
         <div className="flex justify-end gap-2">
           <Button onClick={onClose}>Close</Button>
-          {result && (
+          {state.result && (
             <>
               <Button variant="secondary" onClick={applyPainPoints} loading={updateLead.isPending}>
                 Apply Pain Points Only
@@ -267,13 +253,13 @@ export function IntelligenceModal({ lead, open, onClose }: IntelligenceModalProp
           </div>
         )}
 
-        <Button variant="primary" onClick={run} loading={loading} className="w-full">
-          {loading ? 'Analyzing...' : 'Run Intelligence'}
+        <Button variant="primary" onClick={run} loading={state.status === 'loading'} className="w-full">
+          {state.status === 'loading' ? 'Analyzing...' : 'Run Intelligence'}
         </Button>
 
-        {usedFallback && (
+        {state.source === 'local' && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            {fallbackReason === 'not-deployed' ? (
+            {state.reason === 'not-deployed' ? (
               <>
                 <p className="font-medium">AI proxy Edge Function is not deployed</p>
                 <p className="mt-1">
@@ -290,7 +276,7 @@ npx supabase functions deploy ai-proxy`}
               <>
                 <p className="font-medium">AI provider error</p>
                 <p className="mt-1">
-                  Results were generated with Local Rules instead. Error: {fallbackReason}
+                  Results were generated with Local Rules instead. Error: {state.reason}
                 </p>
               </>
             )}
@@ -300,12 +286,12 @@ npx supabase functions deploy ai-proxy`}
           </div>
         )}
 
-        {result && (
+        {state.result && (
           <div className="space-y-4 pt-2">
             <div>
               <h4 className="text-sm font-semibold text-ces-navy">ICP Suggestions</h4>
               <div className="mt-2 flex flex-wrap gap-2">
-                {result.icp_options.map((opt: IcpOption) => (
+                {state.result.icp_options.map((opt: IcpOption) => (
                   <button
                     key={opt.value}
                     type="button"
@@ -327,66 +313,66 @@ npx supabase functions deploy ai-proxy`}
             </div>
 
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-              <InfoCard label="Industry" value={result.industry || lead.industry || '—'} />
+              <InfoCard label="Industry" value={state.result.industry || lead.industry || '—'} />
               <InfoCard
                 label="Employees"
-                value={result.employees ? result.employees.toLocaleString() : lead.employees?.toLocaleString() || '—'}
+                value={state.result.employees ? state.result.employees.toLocaleString() : lead.employees?.toLocaleString() || '—'}
               />
               <InfoCard label="Selected ICP" value={selectedIcp || '—'} />
-              <InfoCard label="Inferred Tier" value={result.tier} />
-              <InfoCard label="Inferred IT Type" value={result.it_type} />
+              <InfoCard label="Inferred Tier" value={state.result.tier} />
+              <InfoCard label="Inferred IT Type" value={state.result.it_type} />
               <InfoCard label="Research Depth" value={depth === 'deep' ? 'Deep Research' : 'Quick'} />
             </div>
 
-            {result.enrichment && (
+            {state.result.enrichment && (
               <div className="space-y-3">
-                <InfoBlock title="Company Context" content={result.enrichment.company_context} />
-                <InfoBlock title="Key Challenges" content={result.enrichment.key_challenges} />
-                <InfoBlock title="Recommended CES Approach" content={result.enrichment.recommended_approach} />
+                <InfoBlock title="Company Context" content={state.result.enrichment.company_context} />
+                <InfoBlock title="Key Challenges" content={state.result.enrichment.key_challenges} />
+                <InfoBlock title="Recommended CES Approach" content={state.result.enrichment.recommended_approach} />
               </div>
             )}
 
-            {result.research && (
+            {state.result.research && (
               <div className="space-y-3 rounded-lg border border-ces-border bg-slate-50 p-4">
                 <h4 className="text-sm font-semibold text-ces-navy">Sales Research Snippet</h4>
-                {result.research.summary && (
+                {state.result.research.summary && (
                   <div className="rounded-lg border border-ces-border bg-white p-3 text-sm leading-relaxed">
                     <span className="font-medium text-ces-orange">At a glance:</span>{' '}
-                    {result.research.summary}
+                    {state.result.research.summary}
                   </div>
                 )}
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <InfoBlock title="Recent Activities" content={result.research.recent_activities} />
-                  <InfoBlock title="Upcoming Activities / Events" content={result.research.upcoming_activities} />
-                  <InfoBlock title="Key Drivers" content={result.research.key_drivers} />
-                  <InfoBlock title="Industry Trends" content={result.research.industry_trends} />
-                  <InfoBlock title="Likely Next Portfolio" content={result.research.next_portfolio} />
-                  <InfoBlock title="Competitors / Peers" content={result.research.competitors} />
-                  <InfoBlock title="Inferred Tech Stack" content={result.research.tech_stack} />
-                  <InfoBlock title="Decision Makers to Target" content={result.research.decision_makers} />
-                  <InfoBlock title="Buying Triggers" content={result.research.buying_triggers} />
+                  <InfoBlock title="Recent Activities" content={state.result.research.recent_activities} />
+                  <InfoBlock title="Upcoming Activities / Events" content={state.result.research.upcoming_activities} />
+                  <InfoBlock title="Key Drivers" content={state.result.research.key_drivers} />
+                  <InfoBlock title="Industry Trends" content={state.result.research.industry_trends} />
+                  <InfoBlock title="Likely Next Portfolio" content={state.result.research.next_portfolio} />
+                  <InfoBlock title="Competitors / Peers" content={state.result.research.competitors} />
+                  <InfoBlock title="Inferred Tech Stack" content={state.result.research.tech_stack} />
+                  <InfoBlock title="Decision Makers to Target" content={state.result.research.decision_makers} />
+                  <InfoBlock title="Buying Triggers" content={state.result.research.buying_triggers} />
                 </div>
-                {result.research.talking_points && (
-                  <InfoBlock title="Suggested Talking Points" content={result.research.talking_points} />
+                {state.result.research.talking_points && (
+                  <InfoBlock title="Suggested Talking Points" content={state.result.research.talking_points} />
                 )}
-                {result.research.ces_entry_angle && (
+                {state.result.research.ces_entry_angle && (
                   <div className="rounded-lg border border-ces-orange bg-orange-50 p-3 text-sm leading-relaxed">
                     <span className="font-semibold text-ces-orange">Best CES Entry Angle:</span>{' '}
-                    {result.research.ces_entry_angle}
+                    {state.result.research.ces_entry_angle}
                   </div>
                 )}
-                {result.research.ces_support && (
-                  <InfoBlock title="How CES Can Support" content={result.research.ces_support} />
+                {state.result.research.ces_support && (
+                  <InfoBlock title="How CES Can Support" content={state.result.research.ces_support} />
                 )}
               </div>
             )}
 
             <div>
               <h4 className="text-sm font-semibold text-ces-navy">
-                Inferred Pain Points · {result.pain_points.length} identified
+                Inferred Pain Points · {state.result.pain_points.length} identified
               </h4>
               <div className="mt-2 whitespace-pre-wrap rounded-lg border border-ces-border bg-white p-3 text-sm leading-relaxed">
-                {result.pain_points.map((p, i) => (
+                {state.result.pain_points.map((p, i) => (
                   <div key={i} className="py-1">
                     {i + 1}. {p}
                   </div>
