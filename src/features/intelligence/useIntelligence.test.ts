@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import * as ai from '@/lib/ai';
 import { useIntelligence } from './useIntelligence';
 import { LEADS } from '@/data/leads';
+import type { IntelligenceResult } from '@/types';
 
 const lead = LEADS[0];
 
@@ -50,5 +51,21 @@ describe('useIntelligence', () => {
     expect(result.current.state.status).toBe('loading');
     expect(result.current.state.source).toBeNull();
     expect(result.current.state.reason).toBeNull();
+  });
+
+  it('preserves the prior result when a later run throws', async () => {
+    const spy = vi.spyOn(ai, 'runAIIntelligence');
+    const priorResult: IntelligenceResult = { icp_options: [{ value: 'X', confidence: 'high', reasoning: 'r' }], tier: 'Tier 1', it_type: 'Cloud', pain_points: [] };
+    spy.mockResolvedValueOnce({ result: priorResult, fallback: false });
+    const { result } = renderHook(() => useIntelligence());
+    await act(async () => { await result.current.run({ provider: 'openai', model: 'gpt-4o', depth: 'deep', lead }); });
+    expect(result.current.state.result).toBe(priorResult);
+    expect(result.current.state.status).toBe('done');
+
+    spy.mockRejectedValueOnce(new Error('boom'));
+    await act(async () => { await result.current.run({ provider: 'openai', model: 'gpt-4o', depth: 'deep', lead }); });
+    expect(result.current.state.status).toBe('error');
+    expect(result.current.state.reason).toBe('boom');
+    expect(result.current.state.result).toBe(priorResult);
   });
 });

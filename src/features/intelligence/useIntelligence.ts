@@ -29,7 +29,7 @@ export function useIntelligence() {
           reason,
         });
       } catch (err) {
-        setState({ status: 'error', result: null, source: null, reason: err instanceof Error ? err.message : 'AI analysis failed' });
+        setState((s) => ({ ...s, status: 'error', reason: err instanceof Error ? err.message : 'AI analysis failed' }));
       }
     },
     []
